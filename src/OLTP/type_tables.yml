@@ -1,0 +1,37 @@
+MaterialType:
+   BRK : Brick
+   WOO : Wood
+   STO : Stone
+   CON : Concrete
+   FIB : Fibro
+   TIL : Tiles
+   SLA : Slate
+
+PropertyOccupation:
+   VAC : Vacant
+   TEN : Tenanted
+   OWN : Owner Occupied
+
+PropertyType:
+   HOU : House
+   DUP : Duplex
+   TER : Terrace
+   APA : Apartment
+
+AddressType:
+   MAI: Mailing Address
+   RIS: Risk Address
+
+TransactionStatusType:
+   PEN: Pending
+   COM: Committed
+   CAN: Cancelled
+
+TransactionType:
+   NEW: New Business
+   QUO: Quote
+   REN: Renewal
+   END: Endorsement
+   CAN: Cancellation
+
+
