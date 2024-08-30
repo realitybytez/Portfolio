@@ -12,6 +12,22 @@ current_datetime = datetime.now()
 number_of_policies = 100000
 is_cancelled_weight = 20  # Out of 100
 
+system_go_live_date = datetime(2006, 3, 25, 6, 0, 0)
+system_user = 1
+starting_staff_ids = [x for x in range(2, 22)]
+
+
+def generate_go_live_users():
+    party_table = [['party_id', 'given_name', 'surname', 'role', 'modified']]
+    go_live_users = [system_user,] + starting_staff_ids
+    for uid in go_live_users:
+        if uid == system_user:
+            party_record = [uid, 'SYSTEM', 'USER', 'BATCH', system_go_live_date]
+        else:
+            first_name, surname = fake.name().split(' ')
+            party_record = [uid, first_name, surname, 'STAFF', system_go_live_date]
+        party_table.append(party_record)
+    tables['party'] = party_table
 
 def generate_transactions():
     transaction = [['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective', 'expiration', 'modified']]
@@ -69,5 +85,6 @@ def generate_type_tables():
 
 
 if __name__ == '__main__':
+    generate_go_live_users()
     generate_transactions()
     generate_type_tables()
