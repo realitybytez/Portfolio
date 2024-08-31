@@ -1,6 +1,6 @@
 import yaml
-import random
-from datetime import datetime
+from random import randint, randrange, choices
+from datetime import datetime, timedelta, time
 from dateutil.relativedelta import relativedelta
 from faker import Faker
 
@@ -9,13 +9,85 @@ fake = Faker()
 Faker.seed(451)
 
 current_datetime = datetime.now()
-number_of_policies = 100000
-is_cancelled_weight = 20  # Out of 100
 
 system_go_live_date = datetime(2006, 3, 25, 6, 0, 0)
 system_user = 1
 starting_staff_ids = [x for x in range(2, 22)]
 
+active_policies = set()
+num_active_policies = 0
+policy_id_start = 1000000
+
+new_business_min_transactions = 0
+new_business_max_transactions = 50
+endorsement_min_transactions = int(num_active_policies * 0.01)
+endorsement_max_transactions = int(num_active_policies * 0.05)
+cancellations_min_transactions = int(num_active_policies * 0.00)
+cancellations_max_transactions = int(num_active_policies * 0.01)
+
+
+def simulate_system():
+    days_to_present = abs((system_go_live_date - current_datetime)).days
+    days_scope = [system_go_live_date + timedelta(days=x) for x in range(0, days_to_present + 1)]
+    next_transaction_id = 1
+
+    for day in days_scope:
+        tracker = {'New Business':
+                {
+                    'created': 0,
+                    'required': randint(new_business_min_transactions, new_business_max_transactions),
+                },
+            'Endorsement':
+                {
+                    'created': 0,
+                    'required': randint(endorsement_min_transactions, endorsement_max_transactions)
+                },
+            'Cancellation':
+                {
+                    'created': 0,
+                    'required': randint(cancellations_min_transactions, cancellations_max_transactions)
+                },
+                'All':
+                {
+                    'created': 0,
+                    'required': 0
+                }
+        }
+
+        #transaction_types = ['New Business', 'Endorsement', 'Cancellation']
+        transaction_types = ['New Business', 'Endorsement', 'Cancellation']
+        transaction_timestamp = None
+
+        if transaction_timestamp is None:
+            transaction_timestamp = system_go_live_date + timedelta(seconds=randint(0, 10800))
+        else:
+            transaction_timestamp = transaction_timestamp + timedelta(seconds=randint(5,15))
+
+        while True:
+            if tracker['All']['created'] > tracker['All']['required']:
+                break
+
+            choice = choices(transaction_types, weights=[randrange(10, 30), randrange(10, 30), randrange(10, 30)])[0]
+
+            if tracker[choice]['created'] > tracker[choice]['required']:
+                continue
+
+            if choice == 'New Business':
+                record = [next_transaction_id,
+                                       policy_id_start + next_transaction_id,
+                                       'NEW',
+                                       'COM',
+                                       1,
+                                       datetime.combine(transaction_timestamp, time.min),
+                                       datetime.combine(transaction_timestamp, time.min) + relativedelta(years=1),
+                                       transaction_timestamp]
+                active_policies.add(policy_id_start + next_transaction_id)
+
+                next_transaction_id += 1
+                print(record)
+
+
+        # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
 
 def generate_go_live_users():
     party_table = [['party_id', 'given_name', 'surname', 'role', 'modified']]
@@ -28,46 +100,6 @@ def generate_go_live_users():
             party_record = [uid, first_name, surname, 'STAFF', system_go_live_date]
         party_table.append(party_record)
     tables['party'] = party_table
-
-def generate_transactions():
-    transaction = [['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective', 'expiration', 'modified']]
-    transaction_count = 1
-    for i in range(number_of_policies):
-        policy_inception = fake.date_time_between_dates(datetime_start='-10000d', datetime_end='-180d')
-        policy_cancellation = fake.date_time_between_dates(datetime_start=policy_inception, datetime_end='-90d')
-        policy_id = i+1000000
-        rel_delta = relativedelta(policy_cancellation, policy_inception)
-        renewals = 0
-        if rel_delta.years >= 1:
-            renewals = rel_delta.years
-
-        if not is_policy_cancelled():
-            policy_cancellation = None
-
-        new_business_record = [transaction_count, policy_id, 'NEW', 'COM', 1, policy_inception, policy_inception + relativedelta(years=1), policy_inception]
-        transaction_count += 1
-        transaction.append(new_business_record)
-
-        for r in range(1, renewals + 1):
-            renewal_record = [transaction_count, policy_id, 'REN', 'COM', 1+r, policy_inception + relativedelta(years=r), policy_inception + relativedelta(years=r+1), policy_inception + relativedelta(years=1+r)]
-            if policy_cancellation and r == renewals:
-                renewal_record[6] = policy_cancellation
-                renewal_record[-1] = policy_cancellation
-            transaction_count += 1
-            transaction.append(renewal_record)
-
-        if policy_cancellation is not None:
-            cancellation_record = [transaction_count, policy_id, 'CAN', 'COM', 1+renewals+1, policy_cancellation, datetime(2999, 12, 1, 23, 59, 59), policy_cancellation]  # NB + Renewals + Cancellation
-            transaction.append(cancellation_record)
-            transaction_count += 1
-
-
-def is_policy_cancelled():
-    roll = random.randint(1, 100)
-    if roll < is_cancelled_weight:
-        return False
-    else:
-        return True
 
 
 def generate_type_tables():
@@ -86,5 +118,5 @@ def generate_type_tables():
 
 if __name__ == '__main__':
     generate_go_live_users()
-    generate_transactions()
     generate_type_tables()
+    simulate_system()
