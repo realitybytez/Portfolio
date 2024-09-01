@@ -103,18 +103,29 @@ def simulate_system(tables, counters):
                 tables['transaction'].append(record)
                 counters['transaction'] += 1
 
-                record = generate_policy_record(counters, policy_number, inception, transaction_timestamp)
+                party_record = generate_customer_party_record(counters, transaction_timestamp)
+                tables['party'].append(party_record)
+
+                record = generate_policy_record(counters, party_record[0], policy_number, inception, transaction_timestamp)
                 tables['policy'].append(record)
+
                 tracker['All']['created'] += 1
 
         return tables
         # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
 
 
-def generate_policy_record(counters, policy_number, inception, transaction_timestamp):
+def generate_policy_record(counters, party_id, policy_number, inception, transaction_timestamp):
     #todo make line of business dynamic based on risk/cover
-    record = [counters['policy'], None, policy_number, 'Online', inception, 'Western Alliance', 'Home', transaction_timestamp]
+    record = [counters['policy'], party_id, policy_number, 'Online', inception, 'Western Alliance', 'Home', transaction_timestamp]
     counters['policy'] += 1
+    return record
+
+
+def generate_customer_party_record(counters, transaction_timestamp):
+    names = fake.name().split(' ')
+    record = [counters['party'], names[0], names[1], 'CUSTOMER', transaction_timestamp]
+    counters['party'] += 1
     return record
 
 
