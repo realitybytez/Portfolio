@@ -81,7 +81,7 @@ def simulate_system(tables, counters):
 
         transaction_types = ['New Business', 'Endorsement', 'Cancellation']
         transaction_timestamp = None
-        coverage_type_keys = [x[1] for x in tables['CoverageType']]
+        coverage_type_keys = [x[1] for x in tables['coverage_type']]
 
         while True:
             if transaction_timestamp is None:
