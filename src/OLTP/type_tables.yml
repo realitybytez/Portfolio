@@ -1,11 +1,8 @@
-material_type:
-   BRK : Brick
+roof_material_type:
+   ASH : Ashphalt
    WOO : Wood
-   STO : Stone
-   CON : Concrete
-   FIB : Fibro
-   TIL : Tiles
    SLA : Slate
+   MET: Metal
 
 property_occupation:
    VAC : Vacant
@@ -37,5 +34,12 @@ transaction_type:
 coverage_type:
    HOM: Home
    CON: Contents
+
+wall_material_type:
+   BRK : Brick
+   WOO : Wood
+   STO : Stone
+   CON : Concrete
+   FIB : Fibro
 
 
