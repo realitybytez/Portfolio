@@ -70,12 +70,11 @@ def simulate_system(tables, counters):
         transaction_types = ['New Business', 'Endorsement', 'Cancellation']
         transaction_timestamp = None
 
-        if transaction_timestamp is None:
-            transaction_timestamp = system_go_live_date + timedelta(seconds=randint(0, 10800))
-        else:
-            transaction_timestamp = transaction_timestamp + timedelta(seconds=randint(5,15))
-
         while True:
+            if transaction_timestamp is None:
+                transaction_timestamp = system_go_live_date + timedelta(seconds=randint(0, 10800))
+            else:
+                transaction_timestamp = transaction_timestamp + timedelta(seconds=randint(5, 15))
             if tracker['All']['created'] >= tracker['All']['required']:
                 print('leave')
                 print(tracker['All']['required'])
