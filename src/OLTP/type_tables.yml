@@ -34,4 +34,8 @@ TransactionType:
    END: Endorsement
    CAN: Cancellation
 
+CoverageType:
+   HOM: Home
+   CON: Contents
+
 

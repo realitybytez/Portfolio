@@ -7,13 +7,21 @@ from faker import Faker
 all_tables = {
     'transaction': [['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective', 'expiration', 'modified']],
     'policy': [['policy_id', 'party_association_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
-    'party': [['party_id', 'given_name', 'surname', 'role', 'modified'],]
+    'party': [['party_id', 'given_name', 'surname', 'role', 'modified'],],
+    'coverage': [['coverage_id', 'coverage_type_key', 'transaction_id', 'sum_insured', 'modified']],
+    'property': [['property_id', 'coverage_id', 'property_type_key', 'roof_material_key', 'wall_material_key', 'occupancy_id', 'year_of_construction', 'sum_insured', 'modified']],
+    'occupancy': [['occupancy_id', 'occupancy_type_key', 'rental_amount', 'modified']],
+    'contents': [['contents_id', 'coverage_id', 'coverage_type_key', 'transaction_id', 'modified']]
 }
 
 id_counters = {
     'transaction': 1,
     'policy': 1,
     'party': 1,
+    'coverage': 1,
+    'property': 1,
+    'occupancy': 1,
+    'contents': 1
 }
 
 fake = Faker()
@@ -71,6 +79,7 @@ def simulate_system(tables, counters):
 
         transaction_types = ['New Business', 'Endorsement', 'Cancellation']
         transaction_timestamp = None
+        coverage_type_keys = [x[1] for x in tables['CoverageType']]
 
         while True:
             if transaction_timestamp is None:
@@ -102,20 +111,37 @@ def simulate_system(tables, counters):
                                        transaction_timestamp]
                 active_policies.add(policy_id_start + counters['transaction'])
                 tables['transaction'].append(record)
-                counters['transaction'] += 1
 
                 party_record = generate_customer_party_record(counters, transaction_timestamp)
                 tables['party'].append(party_record)
 
-                record = generate_policy_record(counters, party_record[0], policy_number, inception, transaction_timestamp)
-                tables['policy'].append(record)
+                policy_record = generate_policy_record(counters, party_record[0], policy_number, inception, transaction_timestamp)
+                tables['policy'].append(policy_record)
 
+                chance_combined = randrange(0, 100)
+                if chance_combined <= 40:
+                    home_coverage_record = generate_coverage_record(counters, coverage_type_keys[0], counters['transaction'], transaction_timestamp)
+                    contents_coverage_record = generate_coverage_record(counters, coverage_type_keys[1], counters['transaction'], transaction_timestamp)
+                    tables['coverage'].append(home_coverage_record)
+                    tables['coverage'].append(contents_coverage_record)
+                else:
+                    choice = choices(coverage_type_keys, weights=[30, 70])[0]
+                    coverage_record = generate_coverage_record(counters, choice, counters['transaction'], transaction_timestamp)
+                    tables['coverage'].append(coverage_record)
+
+                counters['transaction'] += 1
                 tracker['All']['created'] += 1
 
         if i >= days_to_simulate:
             break
     return tables
         # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
+
+
+def generate_coverage_record(counters, cover, transaction_id, transaction_timestamp):
+    record = [counters['coverage'], cover, transaction_id, transaction_timestamp]
+    counters['coverage'] += 1
+    return record
 
 
 def generate_policy_record(counters, party_id, policy_number, inception, transaction_timestamp):
