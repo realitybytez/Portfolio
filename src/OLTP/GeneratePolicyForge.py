@@ -11,7 +11,11 @@ all_tables = {
     'coverage': [['coverage_id', 'coverage_type_key', 'transaction_id', 'sum_insured', 'modified']],
     'property': [['property_id', 'coverage_id', 'property_type_key', 'roof_material_key', 'wall_material_key', 'occupancy_id', 'year_of_construction', 'sum_insured', 'modified']],
     'occupancy': [['occupancy_id', 'occupancy_type_key', 'rental_amount', 'modified']],
-    'contents': [['contents_id', 'coverage_id', 'coverage_type_key', 'transaction_id', 'modified']]
+    'contents': [['contents_id', 'coverage_id', 'coverage_type_key', 'transaction_id', 'modified']],
+    'address': [['address_id', 'address_key', 'address_line', 'suburb', 'postcode', 'state', 'country', 'modified']],
+    'contact': [['contact_id', 'party_id', 'address_id', 'contact_preference', 'modified']],
+    'premium_detail': [['premium_detail_id', 'annual_premium', 'base_premium', 'gst', 'esl', 'excess', 'modified']],
+    'party_policy_association': [['party_policy_id', 'policy_id', 'party_id', 'modified']],
 }
 
 id_counters = {
@@ -21,10 +25,14 @@ id_counters = {
     'coverage': 1,
     'property': 1,
     'occupancy': 1,
-    'contents': 1
+    'contents': 1,
+    'address': 1,
+    'contact': 1,
+    'premium_detail': 1,
+    'party_policy_association': 1,
 }
 
-fake = Faker()
+fake = Faker('en_AU')
 Faker.seed(451)
 
 current_datetime = datetime.now()
@@ -43,7 +51,7 @@ endorsement_min_transactions = int(num_active_policies * 0.01)
 endorsement_max_transactions = int(num_active_policies * 0.05)
 cancellations_min_transactions = int(num_active_policies * 0.00)
 cancellations_max_transactions = int(num_active_policies * 0.01)
-days_to_simulate = 4
+days_to_simulate = 1
 
 
 def simulate_system(tables, counters):
@@ -82,6 +90,10 @@ def simulate_system(tables, counters):
         transaction_types = ['New Business', 'Endorsement', 'Cancellation']
         transaction_timestamp = None
         coverage_type_keys = [x[1] for x in tables['coverage_type']]
+        property_type_keys = [x[1] for x in tables['property_type']]
+        wall_material_type_keys = [x[1] for x in tables['wall_material_type']]
+        roof_material_type_keys = [x[1] for x in tables['roof_material_type']]
+        occupancy_type_keys = [x[1] for x in tables['property_occupation']]
 
         while True:
             if transaction_timestamp is None:
@@ -117,25 +129,101 @@ def simulate_system(tables, counters):
                 party_record = generate_customer_party_record(counters, transaction_timestamp)
                 tables['party'].append(party_record)
 
+                mailing_address_record = generate_address_record(counters, 'MAI', transaction_timestamp)
+                tables['address'].append(mailing_address_record)
+
+                contact_record = generate_contact_record(counters, party_record[0], mailing_address_record[0], transaction_timestamp)
+                tables['contact'].append(contact_record)
+
                 policy_record = generate_policy_record(counters, party_record[0], policy_number, inception, transaction_timestamp)
                 tables['policy'].append(policy_record)
 
-                chance_combined = randrange(0, 100)
+                chance_combined = randint(1, 100)
+                wall_type = choices(wall_material_type_keys)[0]
+                roof_type = choices(roof_material_type_keys)[0]
+                prop_type = choices(property_type_keys)[0]
+
                 if chance_combined <= 40:
                     home_coverage_record = generate_coverage_record(counters, coverage_type_keys[0], counters['transaction'], transaction_timestamp)
-                    contents_coverage_record = generate_coverage_record(counters, coverage_type_keys[1], counters['transaction'], transaction_timestamp)
                     tables['coverage'].append(home_coverage_record)
+                    occ_type = choices(occupancy_type_keys, weights=[10, 0, 90])[0]  # Renter will not buy combined
+                    occupancy_record = generate_occupancy_record(counters, occ_type, transaction_timestamp)
+                    property_record = generate_property_record(counters, home_coverage_record[0], prop_type, roof_type, wall_type, occupancy_record[0], randint(1950, 2005), round(randint(500000, 3000000), -4), transaction_timestamp)
+                    contents_coverage_record = generate_coverage_record(counters, coverage_type_keys[1], counters['transaction'], transaction_timestamp)
                     tables['coverage'].append(contents_coverage_record)
+                    contents_record = generate_contents_record(counters, contents_coverage_record[0], transaction_timestamp)
+                    tables['contents'].append(contents_record)
                 else:
-                    choice = choices(coverage_type_keys, weights=[30, 70])[0]
+                    choice = choices(coverage_type_keys, weights=[10, 90])[0]
                     coverage_record = generate_coverage_record(counters, choice, counters['transaction'], transaction_timestamp)
                     tables['coverage'].append(coverage_record)
+                    if coverage_record[2] == 'CON':
+                        occ_type = choices(occupancy_type_keys, weights=[33, 33, 33])[0]
+                        occupancy_record = generate_occupancy_record(counters, occ_type, transaction_timestamp)
+                        contents_record = generate_contents_record(counters, coverage_record[0], transaction_timestamp)
+                        tables['contents'].append(contents_record)
+                        property_record = generate_property_record(counters, coverage_record[0], prop_type, roof_type, wall_type, occupancy_record[0], randint(1950, 2005), 0, transaction_timestamp)
+                    else:
+                        occ_type = choices(occupancy_type_keys, weights=[50, 0, 50])[0]  # Renter will not buy property insurance for residence they are inhabiting
+                        occupancy_record = generate_occupancy_record(counters, occ_type, transaction_timestamp)
+                        property_record = generate_property_record(counters, coverage_record[0], prop_type, roof_type, wall_type, occupancy_record[0], randint(1950, 2005), round(randint(500000, 3000000), -4), transaction_timestamp)
+                tables['occupancy'].append(occupancy_record)
+                tables['property'].append(property_record)
+
+                chance_mailing_address = randint(1, 100)
+
+                if chance_mailing_address <= 90:
+                    mail_data = mailing_address_record[2:-2]
+                    risk_address_record = generate_address_record(id_counters, 'RIS', transaction_timestamp, address_data=mail_data)
+                else:
+                    risk_address_record = generate_address_record(id_counters, 'RIS', transaction_timestamp)
+
+                tables['address'].append(risk_address_record)
 
                 counters['transaction'] += 1
                 tracker['All']['created'] += 1
     return tables
         # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
 
+
+def generate_contents_record(counters, coverage_id, transaction_timestamp):
+    record = [counters['contents'], coverage_id, round(randrange(50000, 300000), -3), transaction_timestamp]
+    counters['contents'] += 1
+    return record
+
+
+def generate_occupancy_record(counters, occ_type, transaction_timestamp):
+    rental_amount = 0
+    if occ_type == 'TEN':
+        rental_amount = randrange(300, 1500)
+    record = [counters['occupancy'], occ_type, rental_amount, transaction_timestamp]
+    counters['occupancy'] += 1
+    return record
+
+
+def generate_property_record(counters, coverage_id, prop_type_key, roof_key, wall_key, occ_id, construct_year, sum_insured, transaction_timestamp):
+    record = [counters['property'], coverage_id, prop_type_key, roof_key, wall_key, occ_id, construct_year, sum_insured, transaction_timestamp]
+    counters['property'] += 1
+    return record
+
+
+def generate_contact_record(counters, party_id, address_id, transaction_timestamp):
+    record = [counters['contact'], party_id, address_id, 'MAIL', transaction_timestamp]
+    counters['contact'] += 1
+    return record
+
+
+def generate_address_record(counters, address_type, transaction_timestamp, address_data=None):
+    address_line, structured_address = fake.address().split('\n')
+    suburb, state, postcode = [x.strip() for x in structured_address.split(',')]
+
+    if address_data is None:
+        record = [counters['address'], address_type, address_line, suburb, postcode, state, 'AU', transaction_timestamp]
+    else:
+        record = [counters['address'], address_type, address_data[0], address_data[1], address_data[2], address_data[3], 'AU', transaction_timestamp]
+
+    counters['address'] += 1
+    return record
 
 def generate_coverage_record(counters, cover, transaction_id, transaction_timestamp):
     record = [counters['coverage'], cover, transaction_id, transaction_timestamp]
