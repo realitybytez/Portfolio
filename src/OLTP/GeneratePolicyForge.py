@@ -4,7 +4,11 @@ from datetime import datetime, timedelta, time
 from dateutil.relativedelta import relativedelta
 from faker import Faker
 
-tables = dict()
+all_tables = {
+    'transaction': [],
+    'policy': []
+}
+
 fake = Faker()
 Faker.seed(451)
 
@@ -25,11 +29,14 @@ endorsement_max_transactions = int(num_active_policies * 0.05)
 cancellations_min_transactions = int(num_active_policies * 0.00)
 cancellations_max_transactions = int(num_active_policies * 0.01)
 
+id_counters = {
+    'transaction': 1,
+    'policy': 1
+}
 
-def simulate_system():
+def simulate_system(tables, counters):
     days_to_present = abs((system_go_live_date - current_datetime)).days
     days_scope = [system_go_live_date + timedelta(days=x) for x in range(0, days_to_present + 1)]
-    next_transaction_id = 1
 
     for day in days_scope:
         tracker = {'New Business':
@@ -54,7 +61,9 @@ def simulate_system():
                 }
         }
 
-        #transaction_types = ['New Business', 'Endorsement', 'Cancellation']
+        #todo update to reflect all transaction types
+        tracker['All']['required'] = tracker['New Business']['required']
+
         transaction_types = ['New Business', 'Endorsement', 'Cancellation']
         transaction_timestamp = None
 
@@ -64,32 +73,48 @@ def simulate_system():
             transaction_timestamp = transaction_timestamp + timedelta(seconds=randint(5,15))
 
         while True:
-            if tracker['All']['created'] > tracker['All']['required']:
+            if tracker['All']['created'] >= tracker['All']['required']:
+                print('leave')
+                print(tracker['All']['required'])
+                print(tracker['All']['created'])
                 break
 
             choice = choices(transaction_types, weights=[randrange(10, 30), randrange(10, 30), randrange(10, 30)])[0]
 
-            if tracker[choice]['created'] > tracker[choice]['required']:
+            if tracker[choice]['created'] >= tracker[choice]['required']:
                 continue
 
             if choice == 'New Business':
-                record = [next_transaction_id,
-                                       policy_id_start + next_transaction_id,
+                policy_number = policy_id_start + counters['transaction']
+                inception = datetime.combine(transaction_timestamp, time.min)
+                expiry = datetime.combine(transaction_timestamp, time.min) + relativedelta(years=1),
+                record = [counters['transaction'],
+                                       policy_number,
                                        'NEW',
                                        'COM',
                                        1,
-                                       datetime.combine(transaction_timestamp, time.min),
-                                       datetime.combine(transaction_timestamp, time.min) + relativedelta(years=1),
+                                       inception,
+                                       expiry,
                                        transaction_timestamp]
-                active_policies.add(policy_id_start + next_transaction_id)
+                active_policies.add(policy_id_start + counters['transaction'])
+                tables['transaction'].append(record)
+                counters['transaction'] += 1
 
-                next_transaction_id += 1
-                print(record)
-
-
+                record = generate_policy_record(counters, policy_number, inception, transaction_timestamp)
+                tables['policy'].append(record)
+                tracker['All']['created'] += 1
+                
+        return tables
         # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
 
-def generate_go_live_users():
+
+def generate_policy_record(counters, policy_number, inception, transaction_timestamp):
+    #todo make line of business dynamic based on risk/cover
+    record = [counters['policy'], None, policy_number, 'Online', inception, 'Western Alliance', 'Home', transaction_timestamp]
+    counters['policy'] += 1
+    return record
+
+def generate_go_live_users(tables):
     party_table = [['party_id', 'given_name', 'surname', 'role', 'modified']]
     go_live_users = [system_user,] + starting_staff_ids
     for uid in go_live_users:
@@ -100,9 +125,10 @@ def generate_go_live_users():
             party_record = [uid, first_name, surname, 'STAFF', system_go_live_date]
         party_table.append(party_record)
     tables['party'] = party_table
+    return all_tables
 
 
-def generate_type_tables():
+def generate_type_tables(tables):
     with open('type_tables.yml', 'r') as file:
         data = yaml.safe_load(file)
 
@@ -115,8 +141,10 @@ def generate_type_tables():
                 new_table.append(row)
                 tables[table] = new_table
 
+    return tables
+
 
 if __name__ == '__main__':
-    generate_go_live_users()
-    generate_type_tables()
-    simulate_system()
+    all_tables = generate_go_live_users(all_tables)
+    all_tables = generate_type_tables(all_tables)
+    all_tables = simulate_system(all_tables, id_counters)
