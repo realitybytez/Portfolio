@@ -43,7 +43,7 @@ endorsement_min_transactions = int(num_active_policies * 0.01)
 endorsement_max_transactions = int(num_active_policies * 0.05)
 cancellations_min_transactions = int(num_active_policies * 0.00)
 cancellations_max_transactions = int(num_active_policies * 0.01)
-days_to_simulate = 1
+days_to_simulate = 4
 
 
 def simulate_system(tables, counters):
@@ -51,6 +51,8 @@ def simulate_system(tables, counters):
     days_scope = [system_go_live_date + timedelta(days=x) for x in range(0, days_to_present + 1)]
 
     for i, day in enumerate(days_scope):
+        if i == days_to_simulate:
+            break
 
         tracker = {'New Business':
                 {
@@ -131,9 +133,6 @@ def simulate_system(tables, counters):
 
                 counters['transaction'] += 1
                 tracker['All']['created'] += 1
-
-        if i >= days_to_simulate:
-            break
     return tables
         # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
 
