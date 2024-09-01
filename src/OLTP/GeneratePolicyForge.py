@@ -5,9 +5,9 @@ from dateutil.relativedelta import relativedelta
 from faker import Faker
 
 all_tables = {
-    'transaction': [],
-    'policy': [],
-    'party': [],
+    'transaction': [['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective', 'expiration', 'modified']],
+    'policy': [['policy_id', 'party_association_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
+    'party': [['party_id', 'given_name', 'surname', 'role', 'modified'],]
 }
 
 id_counters = {
@@ -119,8 +119,6 @@ def generate_policy_record(counters, policy_number, inception, transaction_times
 
 
 def generate_go_live_users(tables, counters):
-    header = ['party_id', 'given_name', 'surname', 'role', 'modified']
-    tables['party'].append(header)
     go_live_users = [system_user,] + starting_staff_ids
     for uid in go_live_users:
         if uid == system_user:
