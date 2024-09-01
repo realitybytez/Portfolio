@@ -6,7 +6,14 @@ from faker import Faker
 
 all_tables = {
     'transaction': [],
-    'policy': []
+    'policy': [],
+    'party': [],
+}
+
+id_counters = {
+    'transaction': 1,
+    'policy': 1,
+    'party': 1,
 }
 
 fake = Faker()
@@ -29,10 +36,6 @@ endorsement_max_transactions = int(num_active_policies * 0.05)
 cancellations_min_transactions = int(num_active_policies * 0.00)
 cancellations_max_transactions = int(num_active_policies * 0.01)
 
-id_counters = {
-    'transaction': 1,
-    'policy': 1
-}
 
 def simulate_system(tables, counters):
     days_to_present = abs((system_go_live_date - current_datetime)).days
@@ -103,7 +106,7 @@ def simulate_system(tables, counters):
                 record = generate_policy_record(counters, policy_number, inception, transaction_timestamp)
                 tables['policy'].append(record)
                 tracker['All']['created'] += 1
-                
+
         return tables
         # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
 
@@ -114,18 +117,20 @@ def generate_policy_record(counters, policy_number, inception, transaction_times
     counters['policy'] += 1
     return record
 
-def generate_go_live_users(tables):
-    party_table = [['party_id', 'given_name', 'surname', 'role', 'modified']]
+
+def generate_go_live_users(tables, counters):
+    header = ['party_id', 'given_name', 'surname', 'role', 'modified']
+    tables['party'].append(header)
     go_live_users = [system_user,] + starting_staff_ids
     for uid in go_live_users:
         if uid == system_user:
-            party_record = [uid, 'SYSTEM', 'USER', 'BATCH', system_go_live_date]
+            party_record = [counters['party'], 'SYSTEM', 'USER', 'BATCH', system_go_live_date]
         else:
             first_name, surname = fake.name().split(' ')
-            party_record = [uid, first_name, surname, 'STAFF', system_go_live_date]
-        party_table.append(party_record)
-    tables['party'] = party_table
-    return all_tables
+            party_record = [counters['party'], first_name, surname, 'STAFF', system_go_live_date]
+        counters['party'] += 1
+        tables['party'].append(party_record)
+    return all_tables, id_counters
 
 
 def generate_type_tables(tables):
@@ -145,6 +150,6 @@ def generate_type_tables(tables):
 
 
 if __name__ == '__main__':
-    all_tables = generate_go_live_users(all_tables)
+    all_tables, id_counters = generate_go_live_users(all_tables, id_counters)
     all_tables = generate_type_tables(all_tables)
     all_tables = simulate_system(all_tables, id_counters)
