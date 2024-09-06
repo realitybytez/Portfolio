@@ -20,6 +20,14 @@ DROP TABLE IF EXISTS premium_detail CASCADE;
 DROP TABLE IF EXISTS contents CASCADE;
 DROP TABLE IF EXISTS occupancy CASCADE;
 DROP TABLE IF EXISTS property CASCADE;
+DROP TABLE IF EXISTS roof_material_type CASCADE;
+DROP TABLE IF EXISTS property_occupation_type CASCADE;
+DROP TABLE IF EXISTS property_type CASCADE;
+DROP TABLE IF EXISTS address_type CASCADE;
+DROP TABLE IF EXISTS transaction_status_type CASCADE;
+DROP TABLE IF EXISTS transaction_type CASCADE;
+DROP TABLE IF EXISTS coverage_type CASCADE;
+DROP TABLE IF EXISTS wall_material_type CASCADE;
 
 CREATE TABLE party (
    party_id INTEGER PRIMARY KEY,
@@ -127,4 +135,60 @@ CREATE TABLE property (
    modified TIMESTAMP NOT NULL,
    CONSTRAINT fk_property_coverage FOREIGN KEY (coverage_id) REFERENCES coverage (coverage_id),
    CONSTRAINT fk_property_occupancy FOREIGN KEY (occupancy_id) REFERENCES occupancy (occupancy_id)
+);
+
+CREATE TABLE roof_material_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
+);
+
+CREATE TABLE property_occupation_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
+);
+
+CREATE TABLE property_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
+);
+
+CREATE TABLE address_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
+);
+
+CREATE TABLE transaction_status_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
+);
+
+CREATE TABLE transaction_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
+);
+
+CREATE TABLE coverage_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
+);
+
+CREATE TABLE wall_material_type (
+    type_id INTEGER PRIMARY KEY,
+    type_key VARCHAR(3) NOT NULL,
+    type_desc VARCHAR(50) NOT NULL,
+    modified TIMESTAMP NOT NULL
 );

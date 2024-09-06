@@ -4,7 +4,7 @@ roof_material_type:
    SLA : Slate
    MET: Metal
 
-property_occupation:
+property_occupation_type:
    VAC : Vacant
    TEN : Tenanted
    OWN : Owner Occupied

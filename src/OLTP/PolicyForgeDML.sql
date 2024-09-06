@@ -41,3 +41,35 @@ WITH (FORMAT CSV, HEADER TRUE, DELIMITER ',');
 COPY property
 FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\property.csv'
 WITH (FORMAT CSV, HEADER TRUE, DELIMITER ',');
+
+COPY roof_material_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\roof_material_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
+
+COPY property_occupation_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\property_occupation_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
+
+COPY property_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\property_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
+
+COPY address_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\address_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
+
+COPY transaction_status_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\transaction_status_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
+
+COPY transaction_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\transaction_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
+
+COPY coverage_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\coverage_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
+
+COPY wall_material_type
+FROM 'C:\Users\User\Desktop\Portfolio\src\OLTP\output\wall_material_type.csv'
+WITH (FORMAT CSV, HEADER FALSE, DELIMITER ',');
