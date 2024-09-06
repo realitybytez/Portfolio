@@ -108,7 +108,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
         property_type_keys = [x[1] for x in tables['property_type']]
         wall_material_type_keys = [x[1] for x in tables['wall_material_type']]
         roof_material_type_keys = [x[1] for x in tables['roof_material_type']]
-        occupancy_type_keys = [x[1] for x in tables['property_occupation']]
+        occupancy_type_keys = [x[1] for x in tables['property_occupation_type']]
         address_type_keys = ['MAI', 'RIS']
 
         while True:
