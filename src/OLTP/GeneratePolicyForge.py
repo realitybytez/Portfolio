@@ -135,6 +135,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                     tables['transaction'].append(record)
                     active_policies[policy_id]['transaction'] = record[0]
                     update_premium_record = all_tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
+                    update_premium_record[1] = record[0]
                     old_base_premium = update_premium_record[2]
                     new_base_premium = round(uniform(old_base_premium, old_base_premium * 1.03), 2)
                     update_premium_record[2] = new_base_premium
@@ -288,6 +289,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 else:
                     update_address_record = all_tables['address'][chosen_policy_table_ids_structure['risk_address']]
                     update_premium_record = all_tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
+                    update_premium_record[1] = record[0]
                     old_base_premium = update_premium_record[2]
                     new_base_premium = round(uniform(old_base_premium * .75, old_base_premium * 1.25), 2)
                     update_premium_record[2] = new_base_premium
