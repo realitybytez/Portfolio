@@ -131,7 +131,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                     next_sequence = current_transaction[4] + 1
                     inception = datetime.combine(renewal_datetime, time.min)
                     expiry = renewal_datetime + relativedelta(years=1)
-                    record = generate_transaction_record(counters, policy_id, 'RN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
+                    record = generate_transaction_record(counters, policy_id, 'REN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                     tables['transaction'].append(record)
                     active_policies[policy_id]['transaction'] = record[0]
                     update_premium_record = all_tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
@@ -273,7 +273,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 next_sequence = current_transaction[4] + 1
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = current_transaction[6]
-                record = generate_transaction_record(counters, chosen_policy_id, 'EN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
+                record = generate_transaction_record(counters, chosen_policy_id, 'END', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                 tables['transaction'].append(record)
                 current_transaction[6] = inception
                 current_transaction[-1] = transaction_timestamp
@@ -319,7 +319,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 next_sequence = current_transaction[4] + 1
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = inception
-                record = generate_transaction_record(counters, chosen_policy_id, 'CN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
+                record = generate_transaction_record(counters, chosen_policy_id, 'CAN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                 tables['transaction'].append(record)
 
                 current_transaction_expiry = current_transaction[6]
