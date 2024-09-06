@@ -11,7 +11,7 @@ from os import path
 
 all_tables = {
     'transaction': [['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective', 'expiration', 'modified']],
-    'policy': [['policy_id', 'party_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
+    'policy': [['policy_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
     'party': [['party_id', 'given_name', 'surname', 'role', 'modified'],],
     'coverage': [['coverage_id', 'coverage_type_key', 'transaction_id', 'modified']],
     'property': [['property_id', 'coverage_id', 'property_type_key', 'roof_material_key', 'wall_material_key', 'occupancy_id', 'year_of_construction', 'sum_insured', 'modified']],
@@ -54,7 +54,7 @@ track_renewals = dict()
 
 new_business_min_transactions = 0
 new_business_max_transactions = 50
-days_to_simulate = 10000
+days_to_simulate = 800
 endorsement_cancellation_start_on_day = 5
 
 
@@ -127,17 +127,16 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
 
                 for policy_id, renewal_datetime in policies_renewing_tomorrow.items():
                     policy_table_ids_structure = active_policies[policy_id]
-                    policy_number = all_tables['policy'][policy_id][2]
                     current_transaction = all_tables['transaction'][policy_table_ids_structure['transaction']]
                     next_sequence = current_transaction[4] + 1
                     inception = datetime.combine(renewal_datetime, time.min)
                     expiry = renewal_datetime + relativedelta(years=1)
-                    record = generate_transaction_record(counters, policy_number, 'RN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
+                    record = generate_transaction_record(counters, policy_id, 'RN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                     tables['transaction'].append(record)
                     active_policies[policy_id]['transaction'] = record[0]
                     update_premium_record = all_tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
                     old_base_premium = update_premium_record[2]
-                    new_base_premium = round(uniform(old_base_premium, old_base_premium + old_base_premium * 1.03), 2)
+                    new_base_premium = round(uniform(old_base_premium, old_base_premium * 1.03), 2)
                     update_premium_record[2] = new_base_premium
                     new_gross_premium = new_base_premium * (1 + update_premium_record[3]) * (1 + update_premium_record[4])
                     update_premium_record[5] = round(new_gross_premium, 2)
@@ -165,12 +164,12 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 policy_number = policy_id_start + counters['transaction']
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = datetime.combine(transaction_timestamp, time.min) + relativedelta(years=1)
-                record = generate_transaction_record(counters, policy_number, 'NEW', 'COM', 1, inception, expiry, transaction_timestamp)
+                record = generate_transaction_record(counters, counters['policy'], 'NEW', 'COM', 1, inception, expiry, transaction_timestamp)
                 tables['transaction'].append(record)
 
                 if is_existing_party_new_policy:
                     existing_party_id = choices([x for x in customer_party_occupancy_data.keys()])[0]
-                    policy_record = generate_policy_record(counters, existing_party_id, policy_number, inception, transaction_timestamp)
+                    policy_record = generate_policy_record(counters, policy_number, inception, transaction_timestamp)
                     tables['policy'].append(policy_record)
                     if customer_party_occupancy_data[existing_party_id]['insured_ppor']:
                         occ_property_cover_weights = [10, 90, 0]
@@ -183,7 +182,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                     tables['address'].append(mailing_address_record)
                     contact_record = generate_contact_record(counters, party_record[0], mailing_address_record[0], transaction_timestamp)
                     tables['contact'].append(contact_record)
-                    policy_record = generate_policy_record(counters, party_record[0], policy_number, inception, transaction_timestamp)
+                    policy_record = generate_policy_record(counters, policy_number, inception, transaction_timestamp)
                     tables['policy'].append(policy_record)
                     party_policy_record = generate_party_policy_record(counters, policy_record[0], party_record[0], transaction_timestamp)
 
@@ -270,12 +269,11 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 policy_ids = [x for x in active_policies.keys()]
                 chosen_policy_id = choices(policy_ids)[0]
                 chosen_policy_table_ids_structure = active_policies[chosen_policy_id]
-                policy_number = all_tables['policy'][chosen_policy_id][2]
                 current_transaction = all_tables['transaction'][chosen_policy_table_ids_structure['transaction']]
                 next_sequence = current_transaction[4] + 1
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = current_transaction[6]
-                record = generate_transaction_record(counters, policy_number, 'EN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
+                record = generate_transaction_record(counters, chosen_policy_id, 'EN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                 tables['transaction'].append(record)
                 current_transaction[6] = inception
                 current_transaction[-1] = transaction_timestamp
@@ -291,7 +289,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                     update_address_record = all_tables['address'][chosen_policy_table_ids_structure['risk_address']]
                     update_premium_record = all_tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
                     old_base_premium = update_premium_record[2]
-                    new_base_premium = round(uniform(old_base_premium - old_base_premium * .25, old_base_premium + old_base_premium * 1.25), 2)
+                    new_base_premium = round(uniform(old_base_premium * .75, old_base_premium * 1.25), 2)
                     update_premium_record[2] = new_base_premium
                     new_gross_premium = new_base_premium * (1 + update_premium_record[3]) * (1 + update_premium_record[4])
                     update_premium_record[5] = round(new_gross_premium, 2)
@@ -317,12 +315,11 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 policy_ids = [x for x in active_policies.keys()]
                 chosen_policy_id = choices(policy_ids)[0]
                 chosen_policy_table_ids_structure = active_policies[chosen_policy_id]
-                policy_number = all_tables['policy'][chosen_policy_id][2]
                 current_transaction = all_tables['transaction'][chosen_policy_table_ids_structure['transaction']]
                 next_sequence = current_transaction[4] + 1
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = inception
-                record = generate_transaction_record(counters, policy_number, 'CN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
+                record = generate_transaction_record(counters, chosen_policy_id, 'CN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                 tables['transaction'].append(record)
 
                 current_transaction_expiry = current_transaction[6]
@@ -402,9 +399,9 @@ def generate_coverage_record(counters, cover, transaction_id, transaction_timest
     return record
 
 
-def generate_policy_record(counters, party_id, policy_number, inception, transaction_timestamp):
+def generate_policy_record(counters, policy_number, inception, transaction_timestamp):
     #todo make line of business dynamic based on risk/cover
-    record = [counters['policy'], party_id, policy_number, 'Online', inception, 'Western Alliance', 'Property', transaction_timestamp]
+    record = [counters['policy'], policy_number, 'Online', inception, 'Western Alliance', 'Property', transaction_timestamp]
     counters['policy'] += 1
     return record
 
