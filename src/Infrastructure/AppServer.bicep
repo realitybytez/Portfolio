@@ -1,13 +1,13 @@
 // What should be common
 // Too bad names can't be computed from outputs from another module...
-var org = 'riskybusinessinsurance'
+var org = 'riskybizinsurance'
 var env = 'dev'
 
 //RG Specific
 var region = resourceGroup().location
 
 // VM Resource
-var  app = 'policyforge'
+var app = 'policyforge'
 var vm_resource_name = app
 var vm_admin_user = '${app}admin'
 param vm_ssh_key string
