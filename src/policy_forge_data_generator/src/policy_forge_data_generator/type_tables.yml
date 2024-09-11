@@ -1,0 +1,45 @@
+roof_material_type:
+   ASH : Ashphalt
+   WOO : Wood
+   SLA : Slate
+   MET: Metal
+
+property_occupation_type:
+   VAC : Vacant
+   TEN : Tenanted
+   OWN : Owner Occupied
+
+property_type:
+   HOU : House
+   DUP : Duplex
+   TER : Terrace
+   APA : Apartment
+
+address_type:
+   MAI: Mailing Address
+   RIS: Risk Address
+
+transaction_status_type:
+   PEN: Pending
+   COM: Committed
+   CAN: Cancelled
+
+transaction_type:
+   NEW: New Business
+   QUO: Quote
+   REN: Renewal
+   END: Endorsement
+   CAN: Cancellation
+
+coverage_type:
+   HOM: Home
+   CON: Contents
+
+wall_material_type:
+   BRK : Brick
+   WOO : Wood
+   STO : Stone
+   CON : Concrete
+   FIB : Fibro
+
+

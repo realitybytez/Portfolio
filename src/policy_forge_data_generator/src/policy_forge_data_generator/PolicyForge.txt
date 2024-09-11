@@ -1,0 +1,176 @@
+erDiagram
+    Policy ||--|{ Transaction : ""
+    Policy {
+        int policy_id PK
+        string party_association_id FK
+        string policy_number
+        string channel
+        datetime inception
+        string brand
+        string line_of_business
+        string modified
+    }
+
+    PremiumDetail ||--|| Transaction : ""
+    PremiumDetail {
+        id premium_detail_id
+        decimal annual_premium
+        decimal base_premium
+        decimal gst
+        decimal esl
+        decimal excess
+        string modified
+    }
+
+    Transaction ||--|{ Coverage : ""
+    Transaction {
+        int transaction_id PK
+        int policy_id FK
+        int transaction_type_key FK
+        int transaction_state_key FK
+        int sequence
+        datetime effective
+        datetime expiration
+        datetime modified
+    }
+
+    TransactionStateType ||--|| Transaction : ""
+    TransactionStateType {
+        string transaction_state_type_id PK
+        string transaction_state_type_key UK
+        string transaction_state_type_desc
+        string modified
+    }
+
+    TransactionType ||--|| Transaction : ""
+    TransactionType {
+        string transaction_type_id PK
+        string transaction_type_key UK
+        string transaction_type_desc
+        string modified
+    }
+
+    CoverageType ||--|| Coverage : ""
+    CoverageType {
+        int coverage_type_id PK
+        string coverage_type_key UK
+        string coverage_type_desc
+        string modified
+    }
+
+    Coverage ||--|| Property : ""
+    Coverage {
+        int coverage_id PK
+        int coverage_type_key UK
+        int transaction_id FK
+        decimal sum_insured
+        string modified
+    }
+
+    Contents ||--|| Coverage : ""
+    Contents {
+        int contents_id PK
+        decimal sum_insured
+        string modified
+    }
+
+    Property ||--|| Address : ""
+    Property {
+        int property_id PK
+        int property_type_key FK
+        int roof_material_key FK
+        int wall_material_key FK
+        int security_id FK
+        int occupancy_id FK
+        int year_of_construction
+        decimal sum_insured
+        string modified
+    }
+
+    Embargo ||--o{ Address : ""
+    Embargo {
+        int postcode PK
+        string suburb PK
+        datetime effective
+        datetime expiration
+        string modified
+    }
+
+    Occupancy ||--|| Property : ""
+    Occupancy 
+    {
+        int occupancy_id PK
+        string occupancy_type_key FK
+        decimal rental_amount
+        datetime modified
+    }
+
+    OccupancyType ||--|| Occupancy : ""
+    OccupancyType {
+        int occupation_type_id PK
+        string occupation_type_key UK
+        string occupation_type_desc
+        datetime modified
+    }
+
+    PropertyType ||--|| Property : ""
+    PropertyType {
+        int property_type_id PK
+        string property_type_key UK
+        string property_type_desc
+        datetime modified
+    }
+
+    MaterialType ||--|| Property : ""
+    MaterialType {
+        int material_type_id PK
+        string material_type_key uk
+        string material_type_desc
+        datetime modified
+    }
+
+    Party ||--o{ PartyPolicyAssociation : ""
+    Party {
+        int party_id PK
+        string given_name
+        string surname
+        string role
+        string modified
+    }
+
+    Contact ||--|| Party : ""
+    Contact {
+        int party_contact_preference PK
+        int party_id PK
+        int address_id FK
+        string contact_preference
+        string modified
+    }
+
+    PartyPolicyAssociation ||--o{ Policy : ""
+    PartyPolicyAssociation {
+        int party_policy_id PK
+        int policy_id FK
+        int party_id FK
+        string modified
+    }
+
+    Address ||--|| Contact : ""
+    Address {
+        int address_id PK
+        string address_key FK
+        string address_line
+        string suburb FK
+        int postcode FK
+        string state
+        string country
+        string modified
+    }
+
+    AddressType ||--|| Address : ""
+    AddressType {
+        int address_id PK
+        string address_key UK
+        string address_desc
+        string modified
+    }
