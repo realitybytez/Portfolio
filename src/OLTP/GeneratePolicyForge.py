@@ -11,33 +11,6 @@ from os import path
 #todo as time allows - calculate premium as proportion of term e.g for endorsements
 #todo make inception/expiry non overlapping?
 
-all_tables = {
-    'transaction': [['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective', 'expiration', 'modified']],
-    'policy': [['policy_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
-    'party': [['party_id', 'given_name', 'surname', 'role', 'modified'],],
-    'coverage': [['coverage_id', 'coverage_type_key', 'transaction_id', 'modified']],
-    'property': [['property_id', 'coverage_id', 'property_type_key', 'roof_material_key', 'wall_material_key', 'occupancy_id', 'year_of_construction', 'sum_insured', 'modified']],
-    'occupancy': [['occupancy_id', 'occupancy_type_key', 'rental_amount', 'modified']],
-    'contents': [['contents_id', 'coverage_id', 'sum_insured', 'modified']],
-    'address': [['address_id', 'address_key', 'address_line', 'suburb', 'postcode', 'state', 'country', 'modified']],
-    'contact': [['contact_id', 'party_id', 'address_id', 'contact_preference', 'modified']],
-    'premium_detail': [['premium_detail_id', 'transaction_id', 'base_annual_premium', 'gst', 'stamp_duty', 'gross_annual_premium', 'excess', 'modified']],
-    'party_policy_association': [['party_policy_id', 'policy_id', 'party_id', 'modified']],
-}
-
-id_counters = {
-    'transaction': 1,
-    'policy': 1,
-    'party': 1,
-    'coverage': 1,
-    'property': 1,
-    'occupancy': 1,
-    'contents': 1,
-    'address': 1,
-    'contact': 1,
-    'premium_detail': 1,
-    'party_policy_association': 1,
-}
 
 fake = Faker('en_AU')
 Faker.seed(451)
@@ -129,14 +102,14 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
 
                 for policy_id, renewal_datetime in policies_renewing_tomorrow.items():
                     policy_table_ids_structure = active_policies[policy_id]
-                    current_transaction = all_tables['transaction'][policy_table_ids_structure['transaction']]
+                    current_transaction = tables['transaction'][policy_table_ids_structure['transaction']]
                     next_sequence = current_transaction[4] + 1
                     inception = datetime.combine(renewal_datetime, time.min)
                     expiry = renewal_datetime + relativedelta(years=1)
                     record = generate_transaction_record(counters, policy_id, 'REN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                     tables['transaction'].append(record)
                     active_policies[policy_id]['transaction'] = record[0]
-                    update_premium_record = all_tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
+                    update_premium_record = tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
                     update_premium_record[1] = record[0]
                     old_base_premium = update_premium_record[2]
                     new_base_premium = round(uniform(old_base_premium, old_base_premium * 1.03), 2)
@@ -150,7 +123,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                     except KeyError:
                         track_renewals[expiry.date()] = dict()
 
-                    track_renewals[expiry.date()][all_tables['policy'][policy_id][0]] = record[6]
+                    track_renewals[expiry.date()][tables['policy'][policy_id][0]] = record[6]
                 break
 
             choice = choices(transaction_types, weights=tran_choice_weights)[0]
@@ -240,9 +213,9 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
 
                 if chance_mailing_address <= 90:
                     mail_data = mailing_address_record[2:-2]
-                    risk_address_record = generate_address_record(id_counters, 'RIS', transaction_timestamp, address_data=mail_data)
+                    risk_address_record = generate_address_record(counters, 'RIS', transaction_timestamp, address_data=mail_data)
                 else:
-                    risk_address_record = generate_address_record(id_counters, 'RIS', transaction_timestamp)
+                    risk_address_record = generate_address_record(counters, 'RIS', transaction_timestamp)
 
                 tables['address'].append(risk_address_record)
 
@@ -272,7 +245,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 policy_ids = [x for x in active_policies.keys()]
                 chosen_policy_id = choices(policy_ids)[0]
                 chosen_policy_table_ids_structure = active_policies[chosen_policy_id]
-                current_transaction = all_tables['transaction'][chosen_policy_table_ids_structure['transaction']]
+                current_transaction = tables['transaction'][chosen_policy_table_ids_structure['transaction']]
                 next_sequence = current_transaction[4] + 1
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = current_transaction[6]
@@ -287,10 +260,10 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 suburb, state, postcode = [x.strip() for x in structured_address.split(',')]
 
                 if address_type == 'MAI':
-                    update_address_record = all_tables['address'][chosen_policy_table_ids_structure['mailing_address']]
+                    update_address_record = tables['address'][chosen_policy_table_ids_structure['mailing_address']]
                 else:
-                    update_address_record = all_tables['address'][chosen_policy_table_ids_structure['risk_address']]
-                    update_premium_record = all_tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
+                    update_address_record = tables['address'][chosen_policy_table_ids_structure['risk_address']]
+                    update_premium_record = tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
                     update_premium_record[1] = record[0]
                     old_base_premium = update_premium_record[2]
                     new_base_premium = round(uniform(old_base_premium * .75, old_base_premium * 1.25), 2)
@@ -312,14 +285,14 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 except KeyError:
                     track_renewals[expiry.date()] = dict()
 
-                track_renewals[expiry.date()][all_tables['policy'][chosen_policy_id][0]] = record[6]
+                track_renewals[expiry.date()][tables['policy'][chosen_policy_id][0]] = record[6]
 
             if choice == 'Cancellation':
                 # Update transaction
                 policy_ids = [x for x in active_policies.keys()]
                 chosen_policy_id = choices(policy_ids)[0]
                 chosen_policy_table_ids_structure = active_policies[chosen_policy_id]
-                current_transaction = all_tables['transaction'][chosen_policy_table_ids_structure['transaction']]
+                current_transaction = tables['transaction'][chosen_policy_table_ids_structure['transaction']]
                 next_sequence = current_transaction[4] + 1
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = inception
@@ -327,7 +300,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 tables['transaction'].append(record)
 
                 current_transaction_expiry = current_transaction[6]
-                del track_renewals[current_transaction_expiry.date()][all_tables['policy'][chosen_policy_id][0]]
+                del track_renewals[current_transaction_expiry.date()][tables['policy'][chosen_policy_id][0]]
 
                 current_transaction[6] = inception
                 current_transaction[-1] = transaction_timestamp
@@ -433,7 +406,7 @@ def generate_go_live_users(tables, counters):
             party_record = [counters['party'], first_name, surname, 'STAFF', system_go_live_date]
         counters['party'] += 1
         tables['party'].append(party_record)
-    return all_tables, id_counters
+    return tables, counters
 
 
 def generate_type_tables(tables):
@@ -452,7 +425,41 @@ def generate_type_tables(tables):
     return tables
 
 
-if __name__ == '__main__':
+def generate_data():
+    all_tables = {
+        'transaction': [
+            ['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective',
+             'expiration', 'modified']],
+        'policy': [['policy_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
+        'party': [['party_id', 'given_name', 'surname', 'role', 'modified'], ],
+        'coverage': [['coverage_id', 'coverage_type_key', 'transaction_id', 'modified']],
+        'property': [['property_id', 'coverage_id', 'property_type_key', 'roof_material_key', 'wall_material_key',
+                      'occupancy_id', 'year_of_construction', 'sum_insured', 'modified']],
+        'occupancy': [['occupancy_id', 'occupancy_type_key', 'rental_amount', 'modified']],
+        'contents': [['contents_id', 'coverage_id', 'sum_insured', 'modified']],
+        'address': [
+            ['address_id', 'address_key', 'address_line', 'suburb', 'postcode', 'state', 'country', 'modified']],
+        'contact': [['contact_id', 'party_id', 'address_id', 'contact_preference', 'modified']],
+        'premium_detail': [
+            ['premium_detail_id', 'transaction_id', 'base_annual_premium', 'gst', 'stamp_duty', 'gross_annual_premium',
+             'excess', 'modified']],
+        'party_policy_association': [['party_policy_id', 'policy_id', 'party_id', 'modified']],
+    }
+
+    id_counters = {
+        'transaction': 1,
+        'policy': 1,
+        'party': 1,
+        'coverage': 1,
+        'property': 1,
+        'occupancy': 1,
+        'contents': 1,
+        'address': 1,
+        'contact': 1,
+        'premium_detail': 1,
+        'party_policy_association': 1,
+    }
+
     all_tables, id_counters = generate_go_live_users(all_tables, id_counters)
     all_tables = generate_type_tables(all_tables)
     all_tables = simulate_system(all_tables, id_counters, track_party_occupancy, track_active_policies, num_active_policies, track_renewals)
