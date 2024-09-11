@@ -1,3 +1,5 @@
+import os
+
 import yaml
 from random import randint, randrange, choices, uniform
 from datetime import datetime, timedelta, time
@@ -456,6 +458,9 @@ if __name__ == '__main__':
     all_tables = simulate_system(all_tables, id_counters, track_party_occupancy, track_active_policies, num_active_policies, track_renewals)
 
     output_folder = path.join(path.curdir, 'output')
+
+    if not path.exists(output_folder):
+        os.mkdir(output_folder)
 
     for table_name, content in all_tables.items():
         with open(f'{path.join(output_folder, table_name)}.csv', 'w', newline='\n') as f:
