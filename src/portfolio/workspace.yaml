@@ -1,0 +1,2 @@
+load_from:
+  - python_file: policy_forge_data_generator/definitions.py
