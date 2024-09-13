@@ -18,4 +18,4 @@ packages = ["policy_forge_data_generator"]
 package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]
-policy_forge_data_generator = ["*.yml",]
+policy_forge_data_generator = ["*.yml", "*.sh", "*.sql"]

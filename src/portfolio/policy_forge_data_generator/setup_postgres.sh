@@ -22,6 +22,7 @@ cd /tmp  # postgres user won't have access to user's home, go anywhere but there
 # Setup minimal database environment & access
 sudo -S -u postgres psql -U postgres -c "CREATE DATABASE $db_name;" <~/password.txt
 sudo -S -u postgres psql -U postgres -c "CREATE USER $db_user PASSWORD '$db_password';" <~/password.txt
+sudo -S -u postgres psql -U postgres -c "GRANT pg_read_server_files TO $db_user;" <~/password.txt
 sudo -S -u postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE $db_name TO replica_uploader;" <~/password.txt
 
 # Setup .pg_pass file
