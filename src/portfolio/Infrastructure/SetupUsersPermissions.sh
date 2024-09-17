@@ -35,3 +35,9 @@ chmod 600 $portfolio_login_info
 chmod 600 ~/Portfolio/src/portfolio/local_secrets/portfolio_os_user_secret.txt
 
 #todo setup automation to chmod +x shell scripts
+#todo this is for while running locally only
+chmod +x ./build_environment.sh
+chmod +x ~/Portfolio/src/portfolio/policy_forge_data_generator/setup_postgres.sh
+chmod +x ~/Portfolio/src/portfolio/policy_forge_data_generator/upload_policy_forge_data.sh
+chmod +x ~/Portfolio/src/portfolio/enable_dagster_server.sh
+chmod +x ~/Portfolio/src/portfolio/enable_dagster_daemon.sh
