@@ -1,3 +1,5 @@
+#!/bin/sh
+
 host='localhost'
 port='5432'
 db_name='policy_forge_replica'
