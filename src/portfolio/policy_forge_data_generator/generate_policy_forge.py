@@ -6,12 +6,15 @@ from datetime import datetime, timedelta, time
 from dateutil.relativedelta import relativedelta
 from faker import Faker
 import csv
+import pickle
 from os import path
 from pkg_resources import resource_filename
 
 #todo as time allows - calculate premium as proportion of term e.g for endorsements
 #todo make inception/expiry non overlapping?
+home = path.expanduser("~")
 
+base_path = path.join(home, 'Portfolio/src/portfolio/policy_forge_data_generator')
 
 fake = Faker('en_AU')
 Faker.seed(451)
@@ -22,25 +25,39 @@ system_go_live_date = datetime(2006, 3, 25, 6, 0, 0)
 system_user = 1
 starting_staff_ids = [x for x in range(2, 22)]
 
-num_active_policies = 0
-policy_id_start = 1000000
-track_party_occupancy = dict()
-track_active_policies = dict()
-track_renewals = dict()
-
 new_business_min_transactions = 0
 new_business_max_transactions = 50
-days_to_simulate = 800
-endorsement_cancellation_start_on_day = 5
 
+def simulate_system(system_state, days):
 
-def simulate_system(tables, counters, customer_party_occupancy_data, active_policies, num_active_policies, track_renewals):
-    days_to_present = abs((system_go_live_date - current_datetime)).days
-    days_scope = [system_go_live_date + timedelta(days=x) for x in range(0, days_to_present + 1)]
+    tables = system_state['all_tables']
+    counters = system_state['id_counters']
+    customer_party_occupancy_data = system_state['track_party_occupancy']
+    active_policies = system_state['track_active_policies']
+    track_renewals = system_state['track_renewals']
+    num_active_policies = system_state['num_active_policies']
+    endorsement_cancellation_start_on_day = system_state['endorsement_cancellation_start_on_day']
+
+    if system_state['next_modified_date'] is None:
+        days_to_present = abs((system_go_live_date - current_datetime)).days
+        modified_date = system_go_live_date
+    else:
+        days_to_present = abs((system_state['next_modified_date'] - current_datetime)).days
+        modified_date = system_state['next_modified_date']
+
+    days_scope = [modified_date + timedelta(days=x) for x in range(0, days_to_present + 1)]
 
     for i, day in enumerate(days_scope):
-        if i == days_to_simulate:
-            return tables
+        if i == days:
+            system_state['next_modified_date'] = day.replace(hour=6, minute=0, second=0)
+            system_state['id_counters'] = counters
+            system_state['track_party_occupancy'] = customer_party_occupancy_data
+            system_state['track_active_policies'] = active_policies
+            system_state['track_renewals'] = track_renewals
+            system_state['num_active_policies'] = num_active_policies
+            system_state['endorsement_cancellation_start_on_day'] = endorsement_cancellation_start_on_day
+            system_state['all_tables'] = tables
+            return system_state
 
         endorsement_min_transactions = int(num_active_policies * 0.01)
         endorsement_max_transactions = int(num_active_policies * 0.02)
@@ -69,7 +86,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 }
         }
 
-        if i + 1 >= endorsement_cancellation_start_on_day:
+        if day >= endorsement_cancellation_start_on_day:
             sum_required = tracker['New Business']['required'] + tracker['Endorsement']['required'] + tracker['Cancellation']['required']
             tracker['All']['required'] = sum_required
             transaction_types = ['New Business', 'Endorsement', 'Cancellation']
@@ -110,7 +127,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                     record = generate_transaction_record(counters, policy_id, 'REN', 'COM', next_sequence, inception, expiry, transaction_timestamp)
                     tables['transaction'].append(record)
                     active_policies[policy_id]['transaction'] = record[0]
-                    update_premium_record = tables['premium_detail'][chosen_policy_table_ids_structure['premium_detail']]
+                    update_premium_record = tables['premium_detail'][policy_table_ids_structure['premium_detail']]
                     update_premium_record[1] = record[0]
                     old_base_premium = update_premium_record[2]
                     new_base_premium = round(uniform(old_base_premium, old_base_premium * 1.03), 2)
@@ -138,7 +155,7 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 occ_property_cover_weights = [50, 0, 50]
                 occ_combined_cover_weights = [10, 0, 90]
                 occ_contents_cover_weights = [33, 33, 33]
-                policy_number = policy_id_start + counters['transaction']
+                policy_number = 1000000 + counters['transaction']
                 inception = datetime.combine(transaction_timestamp, time.min)
                 expiry = datetime.combine(transaction_timestamp, time.min) + relativedelta(years=1)
                 record = generate_transaction_record(counters, counters['policy'], 'NEW', 'COM', 1, inception, expiry, transaction_timestamp)
@@ -146,6 +163,12 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
 
                 if is_existing_party_new_policy:
                     existing_party_id = choices([x for x in customer_party_occupancy_data.keys()])[0]
+                    party_record = tables['party'][existing_party_id]
+                    #todo revisit later if too slow since this is now o(n) time complexity......
+                    for row in tables['contact']:
+                        if row[1] == party_record[0]:
+                            mailing_id = row[2]
+                    mailing_address_record = tables['address'][mailing_id]
                     policy_record = generate_policy_record(counters, policy_number, inception, transaction_timestamp)
                     tables['policy'].append(policy_record)
                     if customer_party_occupancy_data[existing_party_id]['insured_ppor']:
@@ -312,7 +335,6 @@ def simulate_system(tables, counters, customer_party_occupancy_data, active_poli
                 tracker['Cancellation']['created'] += 1
 
     return tables
-        # todo renewals... as many of these occur as needed, processed in batch after all of these, exc. canc. Track renewals by date
 
 
 def generate_party_policy_record(counters, policy_id, party_id, transaction_timestamp):
@@ -411,8 +433,7 @@ def generate_go_live_users(tables, counters):
 
 
 def generate_type_tables(tables):
-    filepath = resource_filename(__name__, 'type_tables.yml')
-    #filepath = 'type_tables.yml'
+    filepath = path.join(base_path, 'type_tables.yml')
     with open(filepath, 'r') as file:
         data = yaml.safe_load(file)
         for table in data:
@@ -427,49 +448,88 @@ def generate_type_tables(tables):
     return tables
 
 
-def generate_data():
-    all_tables = {
-        'transaction': [
-            ['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence', 'effective',
-             'expiration', 'modified']],
-        'policy': [['policy_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
-        'party': [['party_id', 'given_name', 'surname', 'role', 'modified'], ],
-        'coverage': [['coverage_id', 'coverage_type_key', 'transaction_id', 'modified']],
-        'property': [['property_id', 'coverage_id', 'property_type_key', 'roof_material_key', 'wall_material_key',
-                      'occupancy_id', 'year_of_construction', 'sum_insured', 'modified']],
-        'occupancy': [['occupancy_id', 'occupancy_type_key', 'rental_amount', 'modified']],
-        'contents': [['contents_id', 'coverage_id', 'sum_insured', 'modified']],
-        'address': [
-            ['address_id', 'address_key', 'address_line', 'suburb', 'postcode', 'state', 'country', 'modified']],
-        'contact': [['contact_id', 'party_id', 'address_id', 'contact_preference', 'modified']],
-        'premium_detail': [
-            ['premium_detail_id', 'transaction_id', 'base_annual_premium', 'gst', 'stamp_duty', 'gross_annual_premium',
-             'excess', 'modified']],
-        'party_policy_association': [['party_policy_id', 'policy_id', 'party_id', 'modified']],
-    }
+def get_system_state():
+    if os.path.exists(path.join(base_path, 'generator_state_db.pkl')):
+        with open(path.join(base_path, 'generator_state_db.pkl'), 'rb') as file:
+            system_state = pickle.load(file)
+    else:
+        system_state = {'next_modified_date': None,
+                        'track_party_occupancy': dict(),
+                        'track_active_policies': dict(),
+                        'track_renewals': dict(),
+                        'num_active_policies': 0,
+                        'endorsement_cancellation_start_on_day': system_go_live_date + timedelta(days=5),  # this needs to become the Xth day from system go-live rather than number
+                        'go_live_data_generated': False,
+                        'id_counters':
+                                        {
+                                            'transaction': 1,
+                                            'policy': 1,
+                                            'party': 1,
+                                            'coverage': 1,
+                                            'property': 1,
+                                            'occupancy': 1,
+                                            'contents': 1,
+                                            'address': 1,
+                                            'contact': 1,
+                                            'premium_detail': 1,
+                                            'party_policy_association': 1,
+                                        },
+                        'all_tables':
+                                        {
+                                            'transaction': [
+                                                ['transaction_id', 'policy_id', 'transaction_type_key', 'transaction_state_key', 'sequence',
+                                                 'effective',
+                                                 'expiration', 'modified']],
+                                            'policy': [['policy_id', 'policy_number', 'channel', 'inception', 'brand', 'line_of_business', 'modified']],
+                                            'party': [['party_id', 'given_name', 'surname', 'role', 'modified'], ],
+                                            'coverage': [['coverage_id', 'coverage_type_key', 'transaction_id', 'modified']],
+                                            'property': [['property_id', 'coverage_id', 'property_type_key', 'roof_material_key', 'wall_material_key',
+                                                          'occupancy_id', 'year_of_construction', 'sum_insured', 'modified']],
+                                            'occupancy': [['occupancy_id', 'occupancy_type_key', 'rental_amount', 'modified']],
+                                            'contents': [['contents_id', 'coverage_id', 'sum_insured', 'modified']],
+                                            'address': [
+                                                ['address_id', 'address_key', 'address_line', 'suburb', 'postcode', 'state', 'country', 'modified']],
+                                            'contact': [['contact_id', 'party_id', 'address_id', 'contact_preference', 'modified']],
+                                            'premium_detail': [
+                                                ['premium_detail_id', 'transaction_id', 'base_annual_premium', 'gst', 'stamp_duty',
+                                                 'gross_annual_premium',
+                                                 'excess', 'modified']],
+                                            'party_policy_association': [['party_policy_id', 'policy_id', 'party_id', 'modified']],
+                                    }
 
-    id_counters = {
-        'transaction': 1,
-        'policy': 1,
-        'party': 1,
-        'coverage': 1,
-        'property': 1,
-        'occupancy': 1,
-        'contents': 1,
-        'address': 1,
-        'contact': 1,
-        'premium_detail': 1,
-        'party_policy_association': 1,
-    }
+                        }
+    return system_state
 
-    all_tables, id_counters = generate_go_live_users(all_tables, id_counters)
-    all_tables = generate_type_tables(all_tables)
-    all_tables = simulate_system(all_tables, id_counters, track_party_occupancy, track_active_policies, num_active_policies, track_renewals)
 
-    output_folder = path.join(os.path.abspath(os.getcwd()), 'output')
+def generate_data(days=1):
 
-    if not path.exists(output_folder):
+    system_state = get_system_state()
+    output_folder = path.join(base_path, 'output')
+    remove_type_tables = False
+    if not system_state['go_live_data_generated']:
+        all_tables, id_counters = generate_go_live_users(system_state['all_tables'], system_state['id_counters'])
+        all_tables = generate_type_tables(all_tables)
+        system_state['all_tables'] = all_tables
+        system_state['id_counters'] = id_counters
+        system_state['go_live_data_generated'] = True
         os.mkdir(output_folder)
+    else:
+        all_tables = generate_type_tables(system_state['all_tables'])
+        remove_type_tables = True
+
+    system_state  = simulate_system(system_state, days)
+
+    # Update system state
+    with open(path.join(base_path, 'generator_state_db.pkl'), 'wb') as file:
+        pickle.dump(system_state, file)
+
+    # Won't update these type tables for purpose of portfolio (for now), so to simplify just don't write these after
+    # initial gen
+    if remove_type_tables:
+        del_keys = ['coverage_type', 'property_occupation_type', 'property_type', 'roof_material_type',
+                    'transaction_status_type', 'transaction_type', 'wall_material_type']
+        for k in del_keys:
+            del system_state['all_tables'][k]
 
     for table_name, content in all_tables.items():
         with open(f'{path.join(output_folder, table_name)}.csv', 'w', newline='\n') as f:
