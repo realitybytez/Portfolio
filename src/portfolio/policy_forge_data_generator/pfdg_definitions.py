@@ -7,7 +7,6 @@ policy_forge_data_schedule = ScheduleDefinition(cron_schedule='0 0 * * *', job=p
 
 policy_forge_upload_job = define_asset_job(name='upload_policy_forge_replica_data', selection='policy_forge_replica_data_upload')
 
-
 @asset
 def policy_forge_replica_data():
     generate_data()

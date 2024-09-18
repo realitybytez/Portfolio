@@ -1,7 +1,7 @@
 load_from:
   - python_file:
-      relative_path: policy_forge_data_generator/definitions.py
+      relative_path: policy_forge_data_generator/pfdg_definitions.py
       working_directory: policy_forge_data_generator
   - python_file:
-      relative_path: CDC/definitions.py
+      relative_path: CDC/cdc_definitions.py
       working_directory: CDC
