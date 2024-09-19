@@ -8,12 +8,18 @@ table_name
 , numeric_precision
 , numeric_scale
 FROM information_schema.columns
-WHERE table_schema='public' AND table_catalog = 'policy_forge_read_replica'
+WHERE table_schema='source' AND table_catalog = 'policy_forge_replica'
 order by table_name, ordinal_position
 """
 
 sql['get_table_delta'] = """
 SELECT *
-FROM {0}
-WHERE modified >= '{1}'
+FROM source.{0}
+WHERE modified > '{1}'
+"""
+
+sql['get_last_modified'] = """
+SELECT max(modified)
+FROM source.{0}
+WHERE modified > '{1}'
 """
