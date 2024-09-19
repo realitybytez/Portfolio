@@ -7,7 +7,8 @@ from dateutil.relativedelta import relativedelta
 from faker import Faker
 import csv
 import pickle
-from os import path
+import shutil
+from os import path, mkdir
 from pkg_resources import resource_filename
 
 #todo as time allows - calculate premium as proportion of term e.g for endorsements
@@ -38,7 +39,7 @@ def simulate_system(system_state, days):
     num_active_policies = system_state['num_active_policies']
     endorsement_cancellation_start_on_day = system_state['endorsement_cancellation_start_on_day']
 
-    if system_state['next_modified_date'] is None:
+    if system_state['next_modified_date'] == system_go_live_date:
         days_to_present = abs((system_go_live_date - current_datetime)).days
         modified_date = system_go_live_date
     else:
@@ -97,11 +98,11 @@ def simulate_system(system_state, days):
             tran_choice_weights = [100,]
 
         transaction_timestamp = None
-        coverage_type_keys = [x[1] for x in tables['coverage_type']]
-        property_type_keys = [x[1] for x in tables['property_type']]
-        wall_material_type_keys = [x[1] for x in tables['wall_material_type']]
-        roof_material_type_keys = [x[1] for x in tables['roof_material_type']]
-        occupancy_type_keys = [x[1] for x in tables['property_occupation_type']]
+        coverage_type_keys = [x[1] for x in tables['coverage_type'][1:]]
+        property_type_keys = [x[1] for x in tables['property_type'][1:]]
+        wall_material_type_keys = [x[1] for x in tables['wall_material_type'][1:]]
+        roof_material_type_keys = [x[1] for x in tables['roof_material_type'][1:]]
+        occupancy_type_keys = [x[1] for x in tables['property_occupation_type'][1:]]
         address_type_keys = ['MAI', 'RIS']
 
         while True:
@@ -432,18 +433,16 @@ def generate_go_live_users(tables, counters):
     return tables, counters
 
 
-def generate_type_tables(tables):
+def generate_type_tables(tables, modified_date):
     filepath = path.join(base_path, 'type_tables.yml')
     with open(filepath, 'r') as file:
         data = yaml.safe_load(file)
         for table in data:
-            new_table = []
             id_counter = 0
             for key, value in data[table].items():
                 id_counter += 1
-                row = [id_counter, key, value, current_datetime]
-                new_table.append(row)
-                tables[table] = new_table
+                row = [id_counter, key, value, modified_date]
+                tables[table].append(row)
 
     return tables
 
@@ -453,7 +452,7 @@ def get_system_state():
         with open(path.join(base_path, 'generator_state_db.pkl'), 'rb') as file:
             system_state = pickle.load(file)
     else:
-        system_state = {'next_modified_date': None,
+        system_state = {'next_modified_date': system_go_live_date,
                         'track_party_occupancy': dict(),
                         'track_active_policies': dict(),
                         'track_renewals': dict(),
@@ -495,6 +494,14 @@ def get_system_state():
                                                  'gross_annual_premium',
                                                  'excess', 'modified']],
                                             'party_policy_association': [['party_policy_id', 'policy_id', 'party_id', 'modified']],
+                                            'roof_material_type': [['type_id', 'type_key', 'type_desc', 'modified']],
+                                            'property_occupation_type': [['type_id', 'type_key', 'type_desc', 'modified']],
+                                            'property_type': [['type_id', 'type_key', 'type_desc', 'modified']],
+                                            'address_type': [['type_id', 'type_key', 'type_desc', 'modified']],
+                                            'transaction_status_type': [['type_id', 'type_key', 'type_desc', 'modified']],
+                                            'transaction_type': [['type_id', 'type_key', 'type_desc', 'modified']],
+                                            'coverage_type': [['type_id', 'type_key', 'type_desc', 'modified']],
+                                            'wall_material_type': [['type_id', 'type_key', 'type_desc', 'modified']],
                                     }
 
                         }
@@ -504,35 +511,41 @@ def get_system_state():
 def generate_data(days=1):
 
     system_state = get_system_state()
+    mod_datetime = system_state['next_modified_date']
     output_folder = path.join(base_path, 'output')
-    remove_type_tables = False
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
+        os.mkdir(output_folder)
+    else:
+        os.mkdir(output_folder)
+
     if not system_state['go_live_data_generated']:
         all_tables, id_counters = generate_go_live_users(system_state['all_tables'], system_state['id_counters'])
-        all_tables = generate_type_tables(all_tables)
+        all_tables = generate_type_tables(all_tables, system_go_live_date)
         system_state['all_tables'] = all_tables
         system_state['id_counters'] = id_counters
         system_state['go_live_data_generated'] = True
-        os.mkdir(output_folder)
-    else:
-        all_tables = generate_type_tables(system_state['all_tables'])
-        remove_type_tables = True
 
-    system_state  = simulate_system(system_state, days)
+    system_state = simulate_system(system_state, days)
 
     # Update system state
     with open(path.join(base_path, 'generator_state_db.pkl'), 'wb') as file:
         pickle.dump(system_state, file)
 
-    # Won't update these type tables for purpose of portfolio (for now), so to simplify just don't write these after
-    # initial gen
-    if remove_type_tables:
-        del_keys = ['coverage_type', 'property_occupation_type', 'property_type', 'roof_material_type',
-                    'transaction_status_type', 'transaction_type', 'wall_material_type']
-        for k in del_keys:
-            del system_state['all_tables'][k]
-
-    for table_name, content in all_tables.items():
+    for table_name, content in system_state['all_tables'].items():
         with open(f'{path.join(output_folder, table_name)}.csv', 'w', newline='\n') as f:
             writer = csv.writer(f)
-            for row in content:
-                writer.writerow(row)
+            rows_written = 0
+            for i, row in enumerate(content):
+                if i == 0:
+                    writer.writerow(row)
+                    rows_written += 1
+                    continue
+                if row[-1].date() >= mod_datetime.date():
+                    writer.writerow(row)
+                    rows_written += 1
+        if rows_written == 1:
+            os.remove(f'{path.join(output_folder, table_name)}.csv')
+
+if __name__ == '__main__':
+    generate_data(1)
