@@ -45,13 +45,9 @@ def get_delta():
     db_pyarrow_mapping = {
         'character varying': pyarrow.string(),
         'integer': pyarrow.int32(),
-        'timestamp without time zone': pyarrow.timestamp('s'),
+        'timestamp without time zone': pyarrow.timestamp('s', tz='Australia/Sydney'),
         'numeric': pyarrow.decimal128(12, 2)
     }
-
-    if not os.path.exists(f'{parent_path}/bronze/sources/policy_forge/{run_time}'):
-        os.makedirs(f'{parent_path}/bronze/sources/policy_forge/{run_time}')
-    print('make', f'{parent_path}/bronze/sources/policy_forge/{run_time}')
 
     conn = connect(user=cfg['user'], password=get_secret(cfg), host=cfg['host'], port=cfg['port'], database=cfg['database'])
 
@@ -89,10 +85,11 @@ def get_delta():
         cursor.execute(query)
         result = cursor.fetchall()
         state[schema_name]['last_modified_datetime'] = result[0][0]
-        print('state for', schema_name, 'is now', result[0][0])
+        print('Last modified is now', state[schema_name]['last_modified_datetime'])
 
         # todo temp solution until on cloud WH infra
+        if not os.path.exists(f'{parent_path}/bronze/sources/policy_forge/{schema_name}'):
+            os.makedirs(f'{parent_path}/bronze/sources/policy_forge/{schema_name}')
 
-        parquet.write_table(table, f'{parent_path}/bronze/sources/policy_forge/{run_time}/{schema_name}.parquet')
-        print('write', f'{parent_path}/bronze/sources/policy_forge/{run_time}/{schema_name}.parquet')
+        parquet.write_table(table, f'{parent_path}/bronze/sources/policy_forge/{schema_name}/{run_time}.parquet')
     set_job_state(state)
