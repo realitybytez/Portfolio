@@ -5,9 +5,7 @@ load_from:
   - python_file:
       relative_path: CDC/cdc_definitions.py
       working_directory: CDC
-  - python_file:
-      relative_path: dbt_silver/dbt_silver_definitions.py
-      working_directory: dbt_silver
+  - python_file: dbt_silver_definitions.py
   - python_file:
       relative_path: dbt_gold/dbt_gold_definitions.py
       working_directory: dbt_gold
