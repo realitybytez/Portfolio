@@ -23,14 +23,14 @@ cd /tmp  # postgres user won't have access to user's home, go anywhere but there
 
 # Setup minimal database environment & access
 sudo -S -u postgres psql -U postgres -c "CREATE DATABASE $db_name;" <$os_password
-sudo -S -u postgres psql -U postgres -c "CREATE USER $db_user PASSWORD '$password';" <$os_password
+sudo -S -u postgres psql -U postgres -c "CREATE USER $db_user PASSWORD '$db_password';" <$os_password
 sudo -S -u postgres psql -U postgres -d $db_name -c "CREATE SCHEMA $db_schema AUTHORIZATION $db_user;" <$os_password
 
 # Setup .pg_pass file
 cd ~
 touch "$pg_pass_file"
 chmod 600 "$pg_pass_file"
-echo "$host:$port:$db_name:$db_user:$password" > $pg_pass_file
+echo "$host:$port:$db_name:$db_user:$db_password" > $pg_pass_file
 
 # Create schema in DB
 cd $code_dir
