@@ -1,0 +1,25 @@
+
+version: 2
+
+sources:
+  - name: prod
+    database: bronze_prod
+    schema: raw
+    tables:
+      - name: policy_forge_policy
+
+models:
+    - name: policy_forge_policy
+      columns:
+        - name: policy_id
+          tests:
+            - unique
+            - not_null
+        - name: modified
+          tests:
+          - unique
+          - not_null
+        - name: brand
+          tests:
+          - is_valid_brand
+
