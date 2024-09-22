@@ -1,4 +1,4 @@
-name: dbt-silver
+name: dbt-silver-ci
 
 on:
   push:
