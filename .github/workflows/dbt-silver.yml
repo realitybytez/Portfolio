@@ -8,8 +8,13 @@ on:
       - bug-dbt-silver*
       - refactor-dbt-silver*
   pull_request:
-    branches:
+    base:
       - main
+    head:
+      - feat-dbt-silver*
+      - bugfix-dbt-silver*
+      - bug-dbt-silver*
+      - refactor-dbt-silver*
 
 jobs:
   dbt_ci:
