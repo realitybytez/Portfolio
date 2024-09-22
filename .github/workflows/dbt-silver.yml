@@ -2,19 +2,12 @@ name: dbt-silver
 
 on:
   push:
-    branches:
-      - feat-dbt-silver*
-      - bugfix-dbt-silver*
-      - bug-dbt-silver*
-      - refactor-dbt-silver*
+    paths:
+      - 'src/portfolio/dbt_silver/models/clean/policy_forge/**'
+      
   pull_request:
-    base:
-      - main
-    head:
-      - feat-dbt-silver*
-      - bugfix-dbt-silver*
-      - bug-dbt-silver*
-      - refactor-dbt-silver*
+    paths:
+      - 'src/portfolio/dbt_silver/models/clean/policy_forge/**'
 
 jobs:
   dbt_ci:
