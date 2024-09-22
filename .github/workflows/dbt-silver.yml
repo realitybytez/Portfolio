@@ -44,9 +44,9 @@ jobs:
       - name: DBT Silver Dev Build
         run: |
           cd src/portfolio/dbt_silver
-          dbt run --target dev
+          dbt run --target dev --profiles-dir ./
 
       - name: DBT Silver Dev Test
         run: |
           cd src/portfolio/dbt_silver
-          dbt test --target dev
+          dbt test --target dev --profiles-dir ./
