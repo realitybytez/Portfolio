@@ -15,6 +15,15 @@ jobs:
     env:
       DBT_PASSWORD: ${{secrets.DBT_PASSWORD}}
     steps:
+      - name: "Check if password available"
+        if: ${{ env.DBT_PASSWORD == '' }}
+        run: |
+          echo "DBT password unavilable"
+      
+      - name: "password length"
+        run: |
+          echo ${#DBT_PASSWORD}
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
