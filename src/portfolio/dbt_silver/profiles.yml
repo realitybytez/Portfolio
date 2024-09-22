@@ -4,7 +4,7 @@ dbt_silver:
     dev:
       account: abnyhbb-fm74053
       database: silver_dev
-      password: "{{ env_var('password') }}" 
+      password: "{{ env_var('DBT_PASSWORD') }}" 
       role: ACCOUNTADMIN
       schema: clean
       threads: 12
@@ -14,7 +14,7 @@ dbt_silver:
     prod:
       account: abnyhbb-fm74053
       database: silver_prod
-      password: "{{ env_var('password') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
       role: ACCOUNTADMIN
       schema: clean
       threads: 12

@@ -1,4 +1,4 @@
-with 
+with
 
 raw_policy_forge_policy as (
     select *
