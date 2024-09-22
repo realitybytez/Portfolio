@@ -3,11 +3,11 @@ name: dbt-silver
 on:
   push:
     paths:
-      - 'src/portfolio/dbt_silver/models/clean/policy_forge/**'
+      - 'src/portfolio/dbt_silver/models/silver/clean/policy_forge/**'
       
   pull_request:
     paths:
-      - 'src/portfolio/dbt_silver/models/clean/policy_forge/**'
+      - 'src/portfolio/dbt_silver/models/silver/clean/policy_forge/**'
 
 jobs:
   dbt_ci:
