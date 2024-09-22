@@ -6,7 +6,7 @@ raw_policy_forge_policy as (
 ),
 
 final as (
-    select * from raw_policy_forge_policy
+    select 1 from raw_policy_forge_policy
 )
 
 select * from final
