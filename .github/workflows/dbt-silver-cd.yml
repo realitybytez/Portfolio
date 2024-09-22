@@ -1,0 +1,41 @@
+name: dbt-silver-cd
+
+on:
+  pull_request:
+    branches:
+      main
+    paths:
+      - 'src/portfolio/dbt_silver/models/silver/clean/policy_forge/**'
+
+jobs:
+  dbt_cd:
+    runs-on: ubuntu-latest
+    env:
+      DBT_PASSWORD: ${{secrets.DBT_PASSWORD}}
+    steps:
+      - name: "Check if password available"
+        if: ${{ env.DBT_PASSWORD == '' }}
+        run: |
+          echo "DBT password unavilable"
+      
+      - name: "password length"
+        run: |
+          echo ${#DBT_PASSWORD}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.12"
+
+      - name: Fetch dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r src/portfolio/requirements.txt
+
+      - name: DBT Silver Prod Deployment
+        run: |
+          cd src/portfolio/dbt_silver
+          dbt run --target prod --profiles-dir ./
