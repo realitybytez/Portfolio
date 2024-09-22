@@ -10,4 +10,3 @@ final as (
 )
 
 select * from final
-#test
