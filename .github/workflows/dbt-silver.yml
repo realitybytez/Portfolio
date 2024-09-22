@@ -15,7 +15,7 @@ jobs:
   dbt_ci:
     runs-on: ubuntu-latest
     env:
-      password: ${{secrets.password}}
+      DBT_PASSWORD: ${{secrets.DBT_PASSWORD}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
