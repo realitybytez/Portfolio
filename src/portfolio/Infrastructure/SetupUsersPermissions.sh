@@ -2,6 +2,7 @@ subscription_id="4327f6dd-2ade-4924-84a1-ce6e20d15662"
 key_vault_name='portfolio3689'
 os_user_secret_name='portfolioosuser'
 
+
 az ad sp create-for-rbac --name appadmin --role Owner --scopes /subscriptions/$subscription_id > ~/Portfolio/src/portfolio/local_secrets/sp_app_admin.json
 az logout
 
@@ -28,14 +29,17 @@ portfolio_tenant=$(jq -r '.tenant' "$portfolio_login_info")
 
 az login --service-principal --username "$portfolio_app_id" --password "$portfolio_password" --tenant "$portfolio_tenant"
 az keyvault secret show --name "$os_user_secret_name" --vault-name "$key_vault_name" --query value -o tsv > ~/Portfolio/src/portfolio/local_secrets/portfolio_os_user_secret.txt
+az keyvault secret show --name "snowflake" --vault-name "$key_vault_name" --query value -o tsv > ~/Portfolio/src/portfolio/local_secrets/snowflake_secret.txt
 
 #todo create os user for this work and chmod 600 password files to that user
 chmod 600 $login_info
 chmod 600 $portfolio_login_info
 chmod 600 ~/Portfolio/src/portfolio/local_secrets/portfolio_os_user_secret.txt
+chmod 600 ~/Portfolio/src/portfolio/local_secrets/snowflake_secret.txt
 
 #todo setup automation to chmod +x shell scripts
 #todo this is for while running locally only
+chmod +x ./DeployInfrastructure.sh
 chmod +x ./build_environment.sh
 chmod +x ~/Portfolio/src/portfolio/policy_forge_data_generator/setup_postgres.sh
 chmod +x ~/Portfolio/src/portfolio/policy_forge_data_generator/upload_policy_forge_data.sh
