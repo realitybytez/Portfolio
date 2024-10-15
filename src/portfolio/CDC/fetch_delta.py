@@ -1,4 +1,5 @@
 from psycopg2 import connect
+from azure.storage.blob import ContainerClient
 import yaml
 from SQL import sql
 from datetime import datetime
@@ -7,10 +8,13 @@ import pyarrow.parquet as parquet
 import os
 import os.path as path
 import pickle
+import json
+import snowflake.connector
 
 base_path = os.path.join(os.path.expanduser("~"), 'Portfolio/src/portfolio/CDC')
-parent_path = os.path.join(os.path.expanduser("~"), 'Portfolio/src')
-run_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+parent_path = os.path.join(os.path.expanduser("~"), 'Portfolio/src/portfolio')
+secrets_folder = path.join(parent_path, 'local_secrets')
+storage_creds = 'storage_account_credentials.json'
 
 def get_job_state(metadata):
 
@@ -30,17 +34,24 @@ def set_job_state(state):
         pickle.dump(state, file)
 
 def get_secret(cfg):
-    with open(path.join(parent_path, cfg['secret_store'])) as f:
+    with open(cfg['secret_store']) as f:
         secret = f.readline().strip()
     return secret
 
 def get_cfg():
-    with open(f'{base_path}/config.yml', 'r') as file:
-        cfg = yaml.safe_load(file)['db_params']
+    with open(f'{parent_path}/Infrastructure/config.yml', 'r') as file:
+        cfg = yaml.safe_load(file)
     return cfg
 
+def get_storage_account_credential():
+    with open(path.join(secrets_folder, storage_creds), 'r') as f:
+        _json = json.load(f)
+        return _json[-1]['value']
+
+
 def get_delta():
-    cfg = get_cfg()
+    infra_cfg = get_cfg()
+    cfg = infra_cfg['postgres']
 
     db_pyarrow_mapping = {
         'character varying': pyarrow.string(),
@@ -64,6 +75,22 @@ def get_delta():
         schemas[result[0]].append((result[1], db_pyarrow_mapping[result[2]]))
 
     state = get_job_state(metadata)
+    storage_account_name = infra_cfg['storage_account_name']
+
+    container_client = ContainerClient(account_url=f"https://{storage_account_name}.blob.core.windows.net/",
+                                       credential=get_storage_account_credential(),
+                                       container_name='bronze')
+
+    with open(os.path.join(parent_path, infra_cfg['snowflake']['secret_store']), 'r') as file:
+        os.environ['SNOWFLAKE_PASSWORD'] = file.readline().strip()
+
+    sf_conn = snowflake.connector.connect(
+        user=infra_cfg['snowflake']['user'],
+        password=os.environ['SNOWFLAKE_PASSWORD'],
+        account=infra_cfg['snowflake']['account']
+    )
+
+    sf_cursor = sf_conn.cursor()
 
     for schema_name, schema_data in schemas.items():
         print('Last modified is for', schema_name, 'is', state[schema_name]['last_modified_datetime'])
@@ -91,5 +118,15 @@ def get_delta():
         if not os.path.exists(f'{parent_path}/bronze/sources/policy_forge/{schema_name}'):
             os.makedirs(f'{parent_path}/bronze/sources/policy_forge/{schema_name}')
 
-        parquet.write_table(table, f'{parent_path}/bronze/sources/policy_forge/{schema_name}/{run_time}.parquet')
+        last_mod = result[0][0].strftime("%Y-%m-%d-%H-%M-%S")
+
+        fp = f'{parent_path}/bronze/sources/policy_forge/{schema_name}/{last_mod}.parquet'
+        blob_fp = f'sources/policy_forge{schema_name}/{last_mod}.parquet'
+        parquet.write_table(table, fp)
+
+        with open(fp, 'rb') as up:
+            container_client.upload_blob(name=blob_fp, data=up)
+
+        sf_cursor.execute(f'ALTER EXTERNAL TABLE BRONZE_PROD.RAW.{schema_name} REFRESH;')
+
     set_job_state(state)
