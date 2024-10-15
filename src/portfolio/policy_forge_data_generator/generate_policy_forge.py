@@ -22,7 +22,7 @@ Faker.seed(451)
 
 current_datetime = datetime.now()
 
-system_go_live_date = datetime(2006, 3, 25, 6, 0, 0)
+system_go_live_date = datetime(2022, 3, 12, 6, 0, 0)
 system_user = 1
 starting_staff_ids = [x for x in range(2, 22)]
 
