@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "policy_forge_data_generator"
+version = "0.1.0"
+description = "Generates policy data for policy system OLTP"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+	"PyYAML==6.0.1",
+	"Faker==28.0.0"
+]
+
+[tool.setuptools]
+packages = ["policy_forge_data_generator"]
+package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+policy_forge_data_generator = ["*.yml", "*.sh", "*.sql"]

@@ -1,0 +1,14 @@
+tenant: 4709ea8c-d3bd-4226-9769-cd360ea2e962
+storage_account_name: rbiprodforf7hyv23odo
+
+postgres:
+  user: policy_forge_user
+  host: localhost
+  port: 5432
+  database: policy_forge_replica
+  secret_store: local_secrets/portfolio_os_user_secret.txt
+
+snowflake:
+  account: astqhao-no22230 # To be populated by user
+  user: sayazzz # To be populated by user
+  secret_store: local_secrets/snowflake_secret.txt

@@ -1,11 +1,13 @@
 load_from:
   - python_file:
-      relative_path: policy_forge_data_generator/pfdg_definitions.py
-      working_directory: policy_forge_data_generator
+      relative_path: source_system/policy_forge_definitions.py
+      working_directory: source_system
   - python_file:
-      relative_path: CDC/cdc_definitions.py
-      working_directory: CDC
-  - python_file: dbt_silver_definitions.py
+      relative_path: change_data_capture/cdc_definitions.py
+      working_directory: change_data_capture
+  - python_file: 
+      relative_path: silver/silver_definitions.py
+      working_directory: silver
   - python_file:
-      relative_path: dbt_gold/dbt_gold_definitions.py
-      working_directory: dbt_gold
+      relative_path: gold/gold_definitions.py
+      working_directory: gold
