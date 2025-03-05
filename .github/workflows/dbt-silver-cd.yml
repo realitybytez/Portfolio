@@ -5,7 +5,7 @@ on:
     branches:
       main
     paths:
-      - 'src/portfolio/dbt_silver/models/silver/clean/policy_forge/**'
+      - 'src/portfolio/silver/models/silver/clean/policy_forge/**'
 
 jobs:
   dbt_cd:
@@ -37,5 +37,5 @@ jobs:
 
       - name: DBT Silver Prod Deployment
         run: |
-          cd src/portfolio/dbt_silver
+          cd src/portfolio/silver
           dbt run --target prod --profiles-dir ./
