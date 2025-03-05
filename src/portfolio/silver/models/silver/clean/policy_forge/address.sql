@@ -7,17 +7,18 @@
 
 with
 
-raw_policy_forge_policy as (
+raw_policy_forge_address as (
     select
-    policy_id
-    ,policy_number
-    ,channel
-    ,inception
-    ,brand
-    ,line_of_business
+    address_id
+    ,address_key
+    ,address_line
+    ,suburb
+    ,postcode
+    ,state
+    ,country
     ,modified
     ,cdc_snapshot
-    from {{ source('prod', 'policy') }}
+    from {{ source('prod', 'address') }}
 
     {% if is_incremental() %}
 
@@ -28,17 +29,18 @@ raw_policy_forge_policy as (
 
 final as (
     select
-    policy_id object_system_id
-    ,policy_number
-    ,channel
-    ,inception
-    ,brand
-    ,line_of_business
+    address_id object_system_id
+    ,address_key
+    ,address_line
+    ,suburb
+    ,postcode
+    ,state
+    ,country
     ,modified event_modified
     ,'Policy Forge' source_system
     ,'{{ invocation_id }}' data_warehouse_dbt_batch_id 
     ,cdc_snapshot data_warehouse_snapshot
-    from raw_policy_forge_policy
+    from raw_policy_forge_address
 )
 
 select * from final
