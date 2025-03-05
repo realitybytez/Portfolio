@@ -2,7 +2,7 @@ with
 
 raw_policy_forge_policy as (
     select *
-    from {{ source('prod', 'policy_forge_policy') }}
+    from {{ source('prod', 'policy') }}
 ),
 
 final as (

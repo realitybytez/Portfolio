@@ -6,10 +6,10 @@ sources:
     database: bronze_prod
     schema: raw
     tables:
-      - name: policy_forge_policy
+      - name: policy
 
 models:
-    - name: policy_forge_policy
+    - name: policy
       columns:
         - name: policy_id
           tests:
