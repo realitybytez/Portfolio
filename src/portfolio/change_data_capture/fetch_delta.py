@@ -11,7 +11,7 @@ import pickle
 import json
 import snowflake.connector
 
-base_path = os.path.join(os.path.expanduser("~"), 'Portfolio/src/portfolio/CDC')
+base_path = os.path.join(os.path.expanduser("~"), 'Portfolio/src/portfolio/change_data_capture')
 parent_path = os.path.join(os.path.expanduser("~"), 'Portfolio/src/portfolio')
 secrets_folder = path.join(parent_path, 'local_secrets')
 storage_creds = 'storage_account_credentials.json'
@@ -34,12 +34,12 @@ def set_job_state(state):
         pickle.dump(state, file)
 
 def get_secret(cfg):
-    with open(cfg['secret_store']) as f:
+    with open(os.path.join(parent_path, cfg['secret_store'])) as f:
         secret = f.readline().strip()
     return secret
 
 def get_cfg():
-    with open(f'{parent_path}/Infrastructure/config.yml', 'r') as file:
+    with open(f'{parent_path}/cloud_infrastructure/shared_config.yml', 'r') as file:
         cfg = yaml.safe_load(file)
     return cfg
 
@@ -121,7 +121,7 @@ def get_delta():
         last_mod = result[0][0].strftime("%Y-%m-%d-%H-%M-%S")
 
         fp = f'{parent_path}/bronze/sources/policy_forge/{schema_name}/{last_mod}.parquet'
-        blob_fp = f'sources/policy_forge{schema_name}/{last_mod}.parquet'
+        blob_fp = f'sources/policy_forge/{schema_name}/{last_mod}.parquet'
         parquet.write_table(table, fp)
 
         with open(fp, 'rb') as up:
@@ -130,3 +130,4 @@ def get_delta():
         sf_cursor.execute(f'ALTER EXTERNAL TABLE BRONZE_PROD.RAW.{schema_name} REFRESH;')
 
     set_job_state(state)
+

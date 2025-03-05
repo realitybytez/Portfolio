@@ -1,0 +1,23 @@
+dbt_silver:
+  target: dev
+  outputs:
+    dev:
+      account: astqhao-no22230
+      database: silver_dev
+      password: "{{ env_var('DBT_PASSWORD') }}" 
+      role: ACCOUNTADMIN
+      schema: clean
+      threads: 12
+      type: snowflake
+      user: sayazzz
+      warehouse: portfolio
+    prod:
+      account: astqhao-no22230
+      database: silver_prod
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      role: ACCOUNTADMIN
+      schema: clean
+      threads: 12
+      type: snowflake
+      user: sayazzz
+      warehouse: portfolio
