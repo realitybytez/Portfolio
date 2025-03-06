@@ -7,17 +7,14 @@
 
 with
 
-raw_policy_forge_policy as (
+raw_policy_forge_address_type as (
     select
-        policy_id,
-        policy_number,
-        channel,
-        inception,
-        brand,
-        line_of_business,
+        type_id,
+        type_key,
+        type_desc,
         modified,
         cdc_snapshot
-    from {{ source('prod', 'policy') }}
+    from {{ source('prod', 'address_type') }}
 
     {% if is_incremental() %}
 
@@ -28,17 +25,14 @@ raw_policy_forge_policy as (
 
 final as (
     select
-        policy_id as object_system_id,
-        policy_number,
-        channel,
-        inception,
-        brand,
-        line_of_business,
+        type_id as object_system_id,
+        type_key as join_key,
+        type_desc as description,
         modified as event_modified,
         'Policy Forge' as source_system,
         '{{ invocation_id }}' as data_warehouse_dbt_batch_id, -- noqa: TMP
         cdc_snapshot as data_warehouse_snapshot
-    from raw_policy_forge_policy
+    from raw_policy_forge_address_type
 )
 
 select * from final

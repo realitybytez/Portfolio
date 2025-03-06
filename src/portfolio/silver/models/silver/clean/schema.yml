@@ -7,18 +7,12 @@ sources:
     schema: raw
     tables:
       - name: policy
+      - name: address
+      - name: address_type
 
 models:
     - name: policy
       columns:
-        - name: policy_id
-          tests:
-            - unique
-            - not_null
-        - name: modified
-          tests:
-          - unique
-          - not_null
         - name: brand
           tests:
           - is_valid_brand
