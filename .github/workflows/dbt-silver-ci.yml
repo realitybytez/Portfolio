@@ -39,7 +39,7 @@ jobs:
 
       - name: Lint Silver (Clean)
         run: |
-          sqlfluff lint ~/Portfolio/src/portfolio/silver/models/silver/clean/policy_forge --dialect snowflake -e LT05,RF02
+          sqlfluff lint src/portfolio/silver/models/silver/clean/policy_forge --dialect snowflake -e LT05,RF02
 
       - name: DBT Silver Dev Build
         run: |
