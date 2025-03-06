@@ -8,6 +8,7 @@ sources:
     tables:
       - name: policy
       - name: address
+      - name: address_type
 
 models:
     - name: policy

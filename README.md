@@ -12,6 +12,8 @@ Dagster is responsible for orchestration and DBT for curation of datasets along 
 
 The setup of almost all components is done via glue/automation code (mixture of Python and bash) and the guide below can be used to get up and running on a local or cloud resource.
 
+[Temp note: Currently in progress - silver DBT job needs to be kicked off with DBT build & silver, gold layers still WIP]
+
 1. Setup Cloud Services
 ```
 # Create a fresh Azure subscription / use existing subscription
