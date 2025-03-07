@@ -1,26 +1,28 @@
 from pathlib import Path
+from dagster import AssetKey, asset_sensor, SensorEvaluationContext, define_asset_job, EventLogEntry, RunRequest, asset, Definitions, DefaultSensorStatus, AssetExecutionContext, PipesSubprocessClient, MaterializeResult
+import os
+import json
+import subprocess
 
-from dagster import AssetExecutionContext, Definitions
-from dagster_dbt import (
-    DbtCliResource,
-    DbtProject,
-    build_schedule_from_dbt_selection,
-    dbt_assets,
-)
+bronze_to_silver = define_asset_job(name='adls2_to_silver', selection='silver')
 
-dbt_silver = DbtProject (
-project_dir= "Portfolio/src/portfolio/silver",
-target='prod'
-)
+@asset
+def silver(context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
+    cmd = ["dbt", "build", "--project-dir", Path(__file__, "..").resolve(), "--profiles-dir", Path(__file__, "..").resolve(),
+         '--target', 'dev']
+    return pipes_subprocess_client.run(
+        command=cmd, context=context
+    ).get_materialize_result()
 
-@dbt_assets(manifest=dbt_silver.manifest_path)
-def silver_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-    yield from dbt.cli(["build"], context=context).stream()
-
+@asset_sensor(asset_key=AssetKey('policy_forge_delta_to_bronze'), job=bronze_to_silver, default_status=DefaultSensorStatus.RUNNING)
+def detect_bronze_update(context: SensorEvaluationContext, asset_event: EventLogEntry):
+    assert asset_event.dagster_event and asset_event.dagster_event.asset_key
+    yield RunRequest(run_key=context.cursor)
 
 defs = Definitions(
-    assets=[silver_assets],
-    resources={
-        "dbt": DbtCliResource(project_dir=dbt_silver),
-    },
+    assets=[silver],
+    resources={"pipes_subprocess_client": PipesSubprocessClient()},
+    jobs = [bronze_to_silver,],
+    sensors = [detect_bronze_update],
 )
+
