@@ -8,7 +8,7 @@
 \copy source.premium_detail FROM '~/Portfolio/src/portfolio/source_system/output/premium_detail.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
 \copy source.contents FROM '~/Portfolio/src/portfolio/source_system/output/contents.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
 \copy source.occupancy FROM '~/Portfolio/src/portfolio/source_system/output/occupancy.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
-\copy source.property FROM '~/Portfolio/src/portfolio/source_system./output/property.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
+\copy source.property FROM '~/Portfolio/src/portfolio/source_system/output/property.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
 \copy source.roof_material_type FROM '~/Portfolio/src/portfolio/source_system/output/roof_material_type.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
 \copy source.property_occupation_type FROM '~/Portfolio/src/portfolio/source_system/output/property_occupation_type.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
 \copy source.property_type FROM '~/Portfolio/src/portfolio/source_system/output/property_type.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',');
