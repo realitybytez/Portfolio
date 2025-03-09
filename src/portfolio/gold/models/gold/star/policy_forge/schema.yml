@@ -1,0 +1,27 @@
+
+version: 2
+
+sources:
+  - name: dev
+    database: silver_dev
+    schema: clean
+    tables:
+      - name: address
+      - name: address_types
+      - name: contact
+      - name: contents
+      - name: coverage
+      - name: coverage_types
+      - name: occupancy
+      - name: occupation_types
+      - name: party
+      - name: party_policy_association
+      - name: policy
+      - name: premium_detail
+      - name: property
+      - name: property_types
+      - name: roof_material_type
+      - name: transaction
+      - name: transaction_status_type
+      - name: transaction_type
+      - name: wall_material_type

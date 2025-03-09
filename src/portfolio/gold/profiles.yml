@@ -1,0 +1,23 @@
+dbt_gold:
+  target: dev
+  outputs:
+    dev:
+      account: astqhao-no22230
+      database: gold_dev
+      password: "{{ env_var('DBT_PASSWORD') }}" 
+      role: ACCOUNTADMIN
+      schema: business_unit_datamart
+      threads: 12
+      type: snowflake
+      user: sayazzz
+      warehouse: portfolio
+    prod:
+      account: astqhao-no22230
+      database: gold_prod
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      role: ACCOUNTADMIN
+      schema: business_unit_datamart
+      threads: 12
+      type: snowflake
+      user: sayazzz
+      warehouse: portfolio
